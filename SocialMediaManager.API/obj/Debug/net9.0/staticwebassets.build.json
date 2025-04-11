@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "eAPt2bf7508GDN4G4sq8mCf4dKBLdpaHS1a8rGA9R6Q=",
+  "Source": "SocialMediaManager.API",
+  "BasePath": "_content/SocialMediaManager.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
