@@ -121,11 +121,12 @@ export const twitterService = {
   },
 
   // Connect Twitter account
-  connect: async (code, redirectUri) => {
+  connect: async (code, redirectUri, codeVerifier) => {
     try {
       const response = await api.post("/twitter/connect", {
         code,
         redirectUri,
+        codeVerifier,
       });
       return response.data;
     } catch (error) {
@@ -137,6 +138,30 @@ export const twitterService = {
   deleteAccount: async (id) => {
     try {
       const response = await api.delete(`/twitter/accounts/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Post a tweet
+  postTweet: async (accountId, text) => {
+    try {
+      const response = await api.post(`/twitter/accounts/${accountId}/tweets`, {
+        text,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get timeline (recent tweets)
+  getTimeline: async (accountId, count = 10) => {
+    try {
+      const response = await api.get(
+        `/twitter/accounts/${accountId}/timeline?count=${count}`
+      );
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

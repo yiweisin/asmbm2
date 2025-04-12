@@ -10,17 +10,56 @@ export default function TwitterConnectPage() {
   const searchParams = useSearchParams();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // The Twitter OAuth URL
-  const clientId = process.env.NEXT_PUBLIC_TWITTER_CLIENT_ID;
-  const redirectUri =
-    process.env.NEXT_PUBLIC_TWITTER_REDIRECT_URI ||
-    `${window.location.origin}/dashboard/twitter/connect`;
-  const scope = "tweet.read tweet.write users.read offline.access";
-  const twitterAuthUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&scope=${encodeURIComponent(
-    scope
-  )}&state=state&code_challenge=challenge&code_challenge_method=plain`;
+  // Generate a code verifier and code challenge for PKCE
+  const generateCodeVerifier = () => {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array, (byte) =>
+      ("0" + (byte & 0xff).toString(16)).slice(-2)
+    ).join("");
+  };
+
+  const sha256 = async (plain) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plain);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((byte) => String.fromCharCode(byte)).join("");
+  };
+
+  const base64URLEncode = (str) => {
+    return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  };
+
+  const generateCodeChallenge = async (verifier) => {
+    const hash = await sha256(verifier);
+    return base64URLEncode(hash);
+  };
+
+  // Initialize OAuth flow
+  const initiateTwitterAuth = async () => {
+    // Generate and store code verifier
+    const codeVerifier = generateCodeVerifier();
+    localStorage.setItem("twitter_code_verifier", codeVerifier);
+
+    // Generate code challenge
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+    // Twitter OAuth URL
+    const clientId = process.env.NEXT_PUBLIC_TWITTER_CLIENT_ID;
+    const redirectUri =
+      process.env.NEXT_PUBLIC_TWITTER_REDIRECT_URI ||
+      `${window.location.origin}/dashboard/twitter/connect`;
+    const scope = "tweet.read tweet.write users.read offline.access";
+
+    const twitterAuthUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&scope=${encodeURIComponent(
+      scope
+    )}&state=state&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+
+    window.location.href = twitterAuthUrl;
+  };
 
   // Check for code parameter in URL (OAuth callback)
   useEffect(() => {
@@ -33,21 +72,31 @@ export default function TwitterConnectPage() {
   // Handle the OAuth callback
   const handleOAuthCallback = async (code) => {
     setIsConnecting(true);
+
+    // Retrieve the code verifier we stored before redirecting to Twitter
+    const codeVerifier = localStorage.getItem("twitter_code_verifier");
+
+    const redirectUri =
+      process.env.NEXT_PUBLIC_TWITTER_REDIRECT_URI ||
+      `${window.location.origin}/dashboard/twitter/connect`;
+
     try {
-      await twitterService.connect(code, redirectUri);
+      await twitterService.connect(code, redirectUri, codeVerifier);
       toast.success("Twitter account connected successfully!");
       router.push("/dashboard");
     } catch (error) {
       console.error("Error connecting Twitter account:", error);
-      toast.error("Failed to connect Twitter account. Please try again.");
+
+      // Check for specific error messages
+      if (error.includes && error.includes("authorization code was invalid")) {
+        toast.error("Authorization expired. Please try connecting again.");
+      } else {
+        toast.error("Failed to connect Twitter account. Please try again.");
+      }
     } finally {
       setIsConnecting(false);
+      localStorage.removeItem("twitter_code_verifier");
     }
-  };
-
-  // Redirect to Twitter OAuth
-  const initiateTwitterAuth = () => {
-    window.location.href = twitterAuthUrl;
   };
 
   return (

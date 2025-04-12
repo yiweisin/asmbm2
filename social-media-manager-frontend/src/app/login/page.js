@@ -12,8 +12,6 @@ export default function LoginPage() {
     password: "",
   });
   const [errors, setErrors] = useState({
-    username: "",
-    password: "",
     general: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -26,15 +24,7 @@ export default function LoginPage() {
       [name]: value,
     }));
 
-    // Clear error when user starts typing in the field
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-
-    // Also clear general error when user types
+    // Clear general error when user types
     if (errors.general) {
       setErrors((prev) => ({
         ...prev,
@@ -47,8 +37,6 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setErrors({
-      username: "",
-      password: "",
       general: "",
     });
 
@@ -59,37 +47,11 @@ export default function LoginPage() {
     } catch (error) {
       console.error("Login error:", error);
 
-      // Extract error message
-      const errorMessage = error.error || "Login failed. Please try again.";
-
-      // Handle specific error messages
-      if (
-        errorMessage.toLowerCase().includes("invalid username") ||
-        errorMessage.toLowerCase().includes("user not found")
-      ) {
-        setErrors((prev) => ({
-          ...prev,
-          username: "Invalid username",
-        }));
-      } else if (
-        errorMessage.toLowerCase().includes("invalid password") ||
-        errorMessage.toLowerCase().includes("incorrect password")
-      ) {
-        setErrors((prev) => ({
-          ...prev,
-          password: "Incorrect password",
-        }));
-      } else if (errorMessage.toLowerCase().includes("invalid credentials")) {
-        setErrors((prev) => ({
-          ...prev,
-          general: "Invalid username or password",
-        }));
-      } else {
-        setErrors((prev) => ({
-          ...prev,
-          general: errorMessage,
-        }));
-      }
+      // Show a general error message for all login failures
+      setErrors((prev) => ({
+        ...prev,
+        general: "Invalid username or password",
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -156,25 +118,12 @@ export default function LoginPage() {
                   type="text"
                   autoComplete="username"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.username
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Username"
                   value={formData.username}
                   onChange={handleChange}
-                  aria-invalid={errors.username ? "true" : "false"}
-                  aria-describedby={
-                    errors.username ? "username-error" : undefined
-                  }
                 />
               </div>
-              {errors.username && (
-                <p className="mt-2 text-sm text-red-600" id="username-error">
-                  {errors.username}
-                </p>
-              )}
             </div>
 
             <div>
@@ -191,25 +140,12 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
-                  aria-invalid={errors.password ? "true" : "false"}
-                  aria-describedby={
-                    errors.password ? "password-error" : undefined
-                  }
                 />
               </div>
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600" id="password-error">
-                  {errors.password}
-                </p>
-              )}
             </div>
           </div>
 

@@ -9,6 +9,9 @@ namespace SocialMediaManager.API.DTOs
         
         [Required]
         public string RedirectUri { get; set; }
+        
+        [Required]
+        public string CodeVerifier { get; set; } // Add this new property
     }
     
     public class DiscordConnectDTO

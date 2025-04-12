@@ -20,6 +20,7 @@ export default function RegisterPage() {
     confirmPassword: "",
     general: "",
   });
+  const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -49,6 +50,7 @@ export default function RegisterPage() {
       confirmPassword: "",
       general: "",
     });
+    setSuccess(false);
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
@@ -66,8 +68,15 @@ export default function RegisterPage() {
         formData.email,
         formData.password
       );
-      toast.success("Registration successful! Please sign in.");
-      router.push("/login");
+
+      // Show success message
+      setSuccess(true);
+      toast.success("Registration successful! Redirecting to login...");
+
+      // Redirect after a short delay to allow the user to see the success message
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
     } catch (error) {
       console.error("Registration error:", error);
 
@@ -125,6 +134,38 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
+
+        {success && (
+          <div className="rounded-md bg-green-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-green-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">
+                  Registration successful!
+                </h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>
+                    Your account has been created. Redirecting to login page...
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {errors.general && (
           <div className="rounded-md bg-red-50 p-4">
@@ -302,10 +343,14 @@ export default function RegisterPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || success}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {isLoading
+                ? "Creating account..."
+                : success
+                ? "Account created!"
+                : "Create account"}
             </button>
           </div>
         </form>
