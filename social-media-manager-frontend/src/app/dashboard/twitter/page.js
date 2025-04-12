@@ -1,4 +1,3 @@
-// app/dashboard/twitter/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,6 +5,41 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { twitterService } from "@/services/api";
 import toast from "react-hot-toast";
+import { BarChart } from "lucide-react";
+
+// Helper function to manage local cache
+const getTweetCache = (accountId) => {
+  try {
+    const cache = localStorage.getItem(`twitter_timeline_${accountId}`);
+    if (cache) {
+      const { data, timestamp } = JSON.parse(cache);
+
+      // Check if cache is less than 15 minutes old
+      const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+      if (timestamp > fifteenMinutesAgo) {
+        return data;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Error reading tweet cache:", error);
+    return null;
+  }
+};
+
+const setTweetCache = (accountId, data) => {
+  try {
+    localStorage.setItem(
+      `twitter_timeline_${accountId}`,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (error) {
+    console.error("Error saving tweet cache:", error);
+  }
+};
 
 export default function TwitterDashboard() {
   const [accounts, setAccounts] = useState([]);
@@ -14,6 +48,9 @@ export default function TwitterDashboard() {
   const [tweetText, setTweetText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshDisabled, setRefreshDisabled] = useState(false);
+  const [refreshCountdown, setRefreshCountdown] = useState(0);
   const router = useRouter();
 
   // Load Twitter accounts
@@ -40,21 +77,106 @@ export default function TwitterDashboard() {
     loadAccounts();
   }, []);
 
+  // Countdown refresh timer
+  useEffect(() => {
+    let timer;
+
+    if (refreshCountdown > 0) {
+      timer = setTimeout(() => {
+        setRefreshCountdown((prevCount) => prevCount - 1);
+      }, 1000);
+    } else if (refreshCountdown === 0 && refreshDisabled) {
+      setRefreshDisabled(false);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [refreshCountdown, refreshDisabled]);
+
   // Load tweets for the selected account
-  const loadTweets = async (accountId) => {
+  const loadTweets = async (accountId, forceRefresh = false) => {
+    if (refreshDisabled && !forceRefresh) {
+      toast.error(`Please wait ${refreshCountdown} seconds before refreshing`);
+      return;
+    }
+
     setIsLoading(true);
+
+    // Try to get cached tweets first if not forcing refresh
+    if (!forceRefresh) {
+      const cachedTweets = getTweetCache(accountId);
+      if (cachedTweets) {
+        console.log("Using cached tweets");
+        setTweets(cachedTweets.data || []);
+        setLastUpdated(new Date(cachedTweets.timestamp));
+        setIsLoading(false);
+
+        // Still try to update in the background
+        fetchTweets(accountId, false);
+        return;
+      }
+    }
+
+    // No valid cache, need to fetch
+    await fetchTweets(accountId, true);
+  };
+
+  // Function to fetch tweets from API
+  const fetchTweets = async (accountId, updateLoadingState = true) => {
     try {
       const data = await twitterService.getTimeline(accountId);
+
+      // Save to local cache
       if (data && data.data) {
         setTweets(data.data);
+        setTweetCache(accountId, data);
+        setLastUpdated(new Date());
       } else {
         setTweets([]);
       }
     } catch (error) {
       console.error("Error loading tweets:", error);
-      toast.error("Failed to load tweets");
+
+      // Check if it's a rate limit error
+      const errorMsg = error.toString().toLowerCase();
+      if (
+        errorMsg.includes("rate limit") ||
+        errorMsg.includes("too many requests")
+      ) {
+        // Extract wait time if available (e.g., "Please try again in 15 minutes")
+        const match = errorMsg.match(/try again in (\d+) minutes/);
+        if (match && match[1]) {
+          const waitMinutes = parseInt(match[1]);
+          const waitSeconds = waitMinutes * 60;
+          setRefreshCountdown(waitSeconds);
+          setRefreshDisabled(true);
+          toast.error(
+            `Twitter rate limit reached. Try again in ${waitMinutes} minutes.`
+          );
+        } else {
+          // Default to 15 minute wait if specific time not provided
+          setRefreshCountdown(15 * 60);
+          setRefreshDisabled(true);
+          toast.error("Twitter rate limit reached. Try again in 15 minutes.");
+        }
+
+        // Try to use cached tweets
+        const cachedTweets = getTweetCache(accountId);
+        if (cachedTweets) {
+          setTweets(cachedTweets.data || []);
+          setLastUpdated(new Date(cachedTweets.timestamp));
+          toast.info("Showing cached tweets");
+        } else {
+          toast.error("Failed to load tweets and no cache available");
+        }
+      } else {
+        toast.error("Failed to load tweets");
+      }
     } finally {
-      setIsLoading(false);
+      if (updateLoadingState) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -89,7 +211,7 @@ export default function TwitterDashboard() {
       setTweetText("");
 
       // Refresh the timeline
-      await loadTweets(selectedAccount.id);
+      await loadTweets(selectedAccount.id, true);
     } catch (error) {
       console.error("Error posting tweet:", error);
       toast.error("Failed to post tweet. Please try again.");
@@ -105,10 +227,29 @@ export default function TwitterDashboard() {
     return date.toLocaleString();
   };
 
+  // Format the last updated time
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return "";
+
+    const now = new Date();
+    const diff = Math.floor((now - lastUpdated) / 1000); // seconds
+
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    return `${Math.floor(diff / 3600)} hours ago`;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="pb-5 border-b border-gray-200">
+      <div className="pb-5 border-b border-gray-200 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Twitter Dashboard</h1>
+        <Link
+          href="/dashboard/twitter/analytics"
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          <BarChart className="mr-2 h-4 w-4" />
+          View Analytics
+        </Link>
       </div>
 
       {accounts.length === 0 ? (
@@ -201,10 +342,28 @@ export default function TwitterDashboard() {
 
           {/* Timeline */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
+            <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
               <h2 className="text-lg font-medium text-gray-900">
                 Your Timeline
               </h2>
+              <div className="flex items-center space-x-4">
+                {lastUpdated && (
+                  <span className="text-xs text-gray-500">
+                    Last updated: {formatLastUpdated()}
+                  </span>
+                )}
+                <button
+                  onClick={() => loadTweets(selectedAccount.id, true)}
+                  disabled={isLoading || refreshDisabled}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {refreshDisabled
+                    ? `Refresh in ${refreshCountdown}s`
+                    : isLoading
+                    ? "Refreshing..."
+                    : "Refresh"}
+                </button>
+              </div>
             </div>
             <div className="border-t border-gray-200">
               {isLoading ? (
@@ -219,6 +378,17 @@ export default function TwitterDashboard() {
                       {tweet.created_at && (
                         <div className="mt-1 text-xs text-gray-500">
                           {formatTweetDate(tweet.created_at)}
+                        </div>
+                      )}
+                      {tweet.public_metrics && (
+                        <div className="mt-2 flex space-x-4 text-xs text-gray-500">
+                          <span>
+                            {tweet.public_metrics.retweet_count} Retweets
+                          </span>
+                          <span>{tweet.public_metrics.like_count} Likes</span>
+                          <span>
+                            {tweet.public_metrics.reply_count} Replies
+                          </span>
                         </div>
                       )}
                     </li>

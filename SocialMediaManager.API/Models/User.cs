@@ -52,6 +52,7 @@ namespace SocialMediaManager.API.Models
         
         // Navigation property
         public User User { get; set; }
+         public virtual ICollection<TwitterDailyMetric> DailyMetrics { get; set; } = new List<TwitterDailyMetric>();
     }
     
     public class DiscordAccount

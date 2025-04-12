@@ -167,6 +167,16 @@ export const twitterService = {
       throw error.response?.data || error.message;
     }
   },
+  getAnalytics: async (accountId, timeRange = "30d") => {
+    try {
+      const response = await api.get(
+        `/twitter/accounts/${accountId}/analytics?timeRange=${timeRange}`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Discord services
@@ -198,6 +208,55 @@ export const discordService = {
   deleteAccount: async (id) => {
     try {
       const response = await api.delete(`/discord/accounts/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Discord servers for an account
+  getServers: async (accountId) => {
+    try {
+      const response = await api.get(`/discord/accounts/${accountId}/servers`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get channels for a server
+  getChannels: async (accountId, serverId) => {
+    try {
+      const response = await api.get(
+        `/discord/accounts/${accountId}/servers/${serverId}/channels`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get messages from a channel
+  getMessages: async (accountId, channelId) => {
+    try {
+      const response = await api.get(
+        `/discord/accounts/${accountId}/channels/${channelId}/messages`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Send a message to a channel
+  sendMessage: async (accountId, channelId, message) => {
+    try {
+      const response = await api.post(
+        `/discord/accounts/${accountId}/channels/${channelId}/messages`,
+        {
+          content: message,
+        }
+      );
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

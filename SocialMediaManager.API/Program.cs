@@ -9,14 +9,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddHttpClient();
 
-// Add database context
+// Add database context - using SQLite for cross-platform compatibility
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add token service
 builder.Services.AddScoped<TokenService>();
+
+// Add HttpClientFactory for API calls
+builder.Services.AddHttpClient();
 
 // Add authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -41,6 +43,12 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:3000"); // Next.js default port
     });
 });
+
+// Register the background service for Twitter metrics collection
+builder.Services.AddHostedService<TwitterMetricsService>();
+
+// Add logging
+builder.Services.AddLogging();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();

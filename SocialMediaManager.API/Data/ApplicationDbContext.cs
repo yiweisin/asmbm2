@@ -15,27 +15,18 @@ namespace SocialMediaManager.API.Data
         public DbSet<DiscordAccount> DiscordAccounts { get; set; }
         public DbSet<TelegramAccount> TelegramAccounts { get; set; }
         
+        // Add this line to fix the error:
+        public DbSet<TwitterDailyMetric> TwitterDailyMetrics { get; set; }
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // User to TwitterAccount relationship
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.TwitterAccounts)
-                .WithOne(t => t.User)
-                .HasForeignKey(t => t.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // Existing relationships...
             
-            // User to DiscordAccount relationship
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.DiscordAccounts)
-                .WithOne(d => d.User)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-            
-            // User to TelegramAccount relationship
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.TelegramAccounts)
-                .WithOne(t => t.User)
-                .HasForeignKey(t => t.UserId)
+            // You might want to add the relationship for TwitterDailyMetric too:
+            modelBuilder.Entity<TwitterAccount>()
+                .HasMany(a => a.DailyMetrics)
+                .WithOne(m => m.TwitterAccount)
+                .HasForeignKey(m => m.TwitterAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
