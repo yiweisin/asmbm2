@@ -4,24 +4,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SocialMediaManager.API.Models
 {
-    public class User
+      public class User
     {
-        [Key]
         public int Id { get; set; }
-        
-        [Required]
-        [StringLength(50)]
         public string Username { get; set; }
-        
-        [Required]
-        [EmailAddress]
-        [StringLength(100)]
         public string Email { get; set; }
-        
-        [Required]
         public string PasswordHash { get; set; }
-        
+        public string AccountType { get; set; } = "basic"; // Default value is "basic"
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastLoginAt { get; set; }
         
         // Navigation properties
         public ICollection<TwitterAccount> TwitterAccounts { get; set; }

@@ -28,12 +28,13 @@ api.interceptors.request.use(
 // Authentication services
 export const authService = {
   // Register a new user
-  register: async (username, email, password) => {
+  register: async (username, email, password, accountType = "basic") => {
     try {
       const response = await api.post("/auth/register", {
         username,
         email,
         password,
+        accountType,
       });
       return response.data;
     } catch (error) {
@@ -106,6 +107,68 @@ export const authService = {
     }
     return false;
   },
+
+  // Update user profile
+  updateProfile: async (userData) => {
+    try {
+      const response = await api.put("/auth/profile", userData);
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data;
+      } else if (error.request) {
+        throw {
+          error:
+            "No response from server. Please check your internet connection.",
+        };
+      } else {
+        throw { error: error.message };
+      }
+    }
+  },
+
+  // Change password
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      const response = await api.put("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data;
+      } else if (error.request) {
+        throw {
+          error:
+            "No response from server. Please check your internet connection.",
+        };
+      } else {
+        throw { error: error.message };
+      }
+    }
+  },
+
+  // Update account type (plan)
+  updateAccountType: async (accountType) => {
+    try {
+      const response = await api.put("/auth/account-type", {
+        accountType,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data;
+      } else if (error.request) {
+        throw {
+          error:
+            "No response from server. Please check your internet connection.",
+        };
+      } else {
+        throw { error: error.message };
+      }
+    }
+  },
 };
 
 // Twitter services
@@ -167,6 +230,8 @@ export const twitterService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get analytics data
   getAnalytics: async (accountId, timeRange = "30d") => {
     try {
       const response = await api.get(

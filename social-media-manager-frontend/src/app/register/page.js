@@ -12,17 +12,55 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    accountType: "basic", // Default to basic
   });
   const [errors, setErrors] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
+    accountType: "",
     general: "",
   });
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const accountTypes = [
+    {
+      id: "basic",
+      title: "Basic",
+      description: "For influencers and content creators",
+      features: [
+        "Connect up to 3 social accounts",
+        "Basic scheduling",
+        "Analytics dashboard",
+      ],
+    },
+    {
+      id: "business",
+      title: "Business",
+      description: "For small business owners",
+      features: [
+        "Connect up to 10 social accounts",
+        "Advanced scheduling",
+        "Detailed analytics",
+        "Content suggestions",
+      ],
+    },
+    {
+      id: "premium",
+      title: "Premium",
+      description: "For social media managers",
+      features: [
+        "Unlimited social accounts",
+        "Team collaboration",
+        "Advanced analytics",
+        "API access",
+        "Priority support",
+      ],
+    },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +86,7 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      accountType: "",
       general: "",
     });
     setSuccess(false);
@@ -66,7 +105,8 @@ export default function RegisterPage() {
       await authService.register(
         formData.username,
         formData.email,
-        formData.password
+        formData.password,
+        formData.accountType
       );
 
       // Show success message
@@ -335,6 +375,63 @@ export default function RegisterPage() {
                   id="confirm-password-error"
                 >
                   {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Account Type
+              </label>
+              <div className="grid grid-cols-1 gap-4">
+                {accountTypes.map((type) => (
+                  <div
+                    key={type.id}
+                    className={`relative rounded-lg border ${
+                      formData.accountType === type.id
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 bg-white hover:bg-gray-50"
+                    } p-4 cursor-pointer transition-all duration-200`}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, accountType: type.id }))
+                    }
+                  >
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5">
+                        <input
+                          id={`account-type-${type.id}`}
+                          name="accountType"
+                          type="radio"
+                          className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                          checked={formData.accountType === type.id}
+                          onChange={handleChange}
+                          value={type.id}
+                        />
+                      </div>
+                      <div className="ml-3 text-sm">
+                        <label
+                          htmlFor={`account-type-${type.id}`}
+                          className="font-medium text-gray-700"
+                        >
+                          {type.title}
+                        </label>
+                        <p className="text-gray-500">{type.description}</p>
+                        <ul className="mt-2 list-disc list-inside text-xs text-gray-600">
+                          {type.features.map((feature, index) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {errors.accountType && (
+                <p
+                  className="mt-2 text-sm text-red-600"
+                  id="account-type-error"
+                >
+                  {errors.accountType}
                 </p>
               )}
             </div>

@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { authService } from "@/services/api";
 import { Toaster } from "react-hot-toast";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
@@ -27,6 +27,16 @@ export default function DashboardLayout({ children }) {
     router.push("/login");
   };
 
+  // Helper function to determine if a link is active
+  const isActive = (path) => {
+    return pathname === path;
+  };
+
+  // Check if user can access auto reply (not for basic accounts)
+  const canAccessAutoReply = () => {
+    return user?.accountType !== "basic";
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -36,167 +46,271 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100">
       <Toaster position="top-right" />
 
-      <div className="min-h-screen flex flex-col">
-        {/* Navigation header */}
-        <nav className="bg-white shadow-sm z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
-                  <Link
-                    href="/dashboard"
-                    className="text-xl font-bold text-blue-600"
-                  >
-                    Social Media Manager
-                  </Link>
-                </div>
-                <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                  <Link
-                    href="/dashboard"
-                    className="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/dashboard/twitter"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Twitter
-                  </Link>
-                  <Link
-                    href="/dashboard/discord"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Discord
-                  </Link>
-                  <Link
-                    href="/dashboard/telegram"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Telegram
-                  </Link>
-                </div>
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:items-center">
-                <div className="ml-3 relative">
-                  <div className="flex items-center">
-                    <span className="mr-2 text-sm text-gray-700">
-                      {user.username}
-                    </span>
-                    <button
-                      onClick={handleLogout}
-                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="-mr-2 flex items-center sm:hidden">
-                <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+      <div className="flex">
+        {/* Sidebar for desktop */}
+        <aside className="w-64 bg-white shadow-md fixed h-full overflow-y-auto">
+          <div className="p-6">
+            <Link href="/dashboard" className="text-xl font-bold text-blue-600">
+              Auto Social Media Bot Manager
+            </Link>
+          </div>
+          <nav className="mt-5">
+            <div className="px-3 space-y-1">
+              <Link
+                href="/dashboard"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard") ? "text-blue-500" : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <span className="sr-only">Open main menu</span>
-                  {isMenuOpen ? (
-                    <svg
-                      className="block h-6 w-6"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="block h-6 w-6"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    </svg>
-                  )}
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
+                </svg>
+                Dashboard
+              </Link>
+
+              {/* Schedule Link */}
+              <Link
+                href="/dashboard/schedule"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard/schedule")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard/schedule")
+                      ? "text-blue-500"
+                      : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Schedule
+              </Link>
+
+              {/* Auto Reply Link - only visible for business and premium accounts */}
+              {canAccessAutoReply() && (
+                <Link
+                  href="/dashboard/auto-reply"
+                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                    isActive("/dashboard/auto-reply")
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <svg
+                    className={`mr-3 h-5 w-5 ${
+                      isActive("/dashboard/auto-reply")
+                        ? "text-blue-500"
+                        : "text-gray-500"
+                    }`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    />
+                  </svg>
+                  Auto Reply
+                </Link>
+              )}
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+
+              {/* Platforms heading */}
+              <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Platforms
               </div>
+
+              <Link
+                href="/dashboard/twitter"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard/twitter")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard/twitter")
+                      ? "text-blue-500"
+                      : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                Twitter
+              </Link>
+              <Link
+                href="/dashboard/discord"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard/discord")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard/discord")
+                      ? "text-blue-500"
+                      : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                  />
+                </svg>
+                Discord
+              </Link>
+              <Link
+                href="/dashboard/telegram"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard/telegram")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard/telegram")
+                      ? "text-blue-500"
+                      : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                Telegram
+              </Link>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-4"></div>
+
+              {/* Settings heading */}
+              <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Settings
+              </div>
+
+              <Link
+                href="/dashboard/profile"
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
+                  isActive("/dashboard/profile")
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <svg
+                  className={`mr-3 h-5 w-5 ${
+                    isActive("/dashboard/profile")
+                      ? "text-blue-500"
+                      : "text-gray-500"
+                  }`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                Profile
+              </Link>
+            </div>
+          </nav>
+
+          <div className="absolute bottom-0 w-full border-t border-gray-200 p-4 bg-white">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <Link href="/dashboard/profile" className="hover:underline">
+                  <p className="text-sm font-medium text-gray-700">
+                    {user.username}
+                  </p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </Link>
+                {/* Show account type badge */}
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                  {user.accountType === "premium"
+                    ? "Premium"
+                    : user.accountType === "business"
+                    ? "Business"
+                    : "Basic"}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="ml-auto inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none"
+              >
+                Logout
+              </button>
             </div>
           </div>
-
-          {/* Mobile menu */}
-          {isMenuOpen && (
-            <div className="sm:hidden">
-              <div className="pt-2 pb-3 space-y-1">
-                <Link
-                  href="/dashboard"
-                  className="bg-blue-50 border-blue-500 text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/dashboard/twitter"
-                  className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  Twitter
-                </Link>
-                <Link
-                  href="/dashboard/discord"
-                  className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  Discord
-                </Link>
-                <Link
-                  href="/dashboard/telegram"
-                  className="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-                >
-                  Telegram
-                </Link>
-              </div>
-              <div className="pt-4 pb-3 border-t border-gray-200">
-                <div className="flex items-center px-4">
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">
-                      {user.username}
-                    </div>
-                    <div className="text-sm font-medium text-gray-500">
-                      {user.email}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-1">
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-base font-medium text-red-600 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </nav>
+        </aside>
 
         {/* Main content */}
-        <main className="flex-1 bg-gray-100">
-          <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {children}
-          </div>
+        <main className="pl-64 flex-1">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">{children}</div>
         </main>
       </div>
     </div>
