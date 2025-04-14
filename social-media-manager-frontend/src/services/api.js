@@ -278,46 +278,37 @@ export const discordService = {
       throw error.response?.data || error.message;
     }
   },
-
-  // Get Discord servers for an account
-  getServers: async (accountId) => {
+  getServers: async () => {
     try {
-      const response = await api.get(`/discord/accounts/${accountId}/servers`);
+      const response = await api.get("/discord/servers");
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
-  // Get channels for a server
-  getChannels: async (accountId, serverId) => {
+  getChannels: async (serverId) => {
     try {
-      const response = await api.get(
-        `/discord/accounts/${accountId}/servers/${serverId}/channels`
-      );
+      const response = await api.get(`/discord/servers/${serverId}/channels`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
-  // Get messages from a channel
-  getMessages: async (accountId, channelId) => {
+  getMessages: async (channelId) => {
     try {
-      const response = await api.get(
-        `/discord/accounts/${accountId}/channels/${channelId}/messages`
-      );
+      const response = await api.get(`/discord/channels/${channelId}/messages`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
-  // Send a message to a channel
-  sendMessage: async (accountId, channelId, message) => {
+  sendMessage: async (channelId, message) => {
     try {
       const response = await api.post(
-        `/discord/accounts/${accountId}/channels/${channelId}/messages`,
+        `/discord/channels/${channelId}/messages`,
         {
           content: message,
         }

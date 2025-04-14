@@ -10,12 +10,12 @@ export default function DiscordConnectPage() {
   const searchParams = useSearchParams();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // The Discord OAuth URL
+  // The Discord OAuth URL - ADD GUILDS SCOPE
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
   const redirectUri =
     process.env.NEXT_PUBLIC_DISCORD_REDIRECT_URI ||
     `${window.location.origin}/dashboard/discord/connect`;
-  const scope = "identify bot messages.read";
+  const scope = "identify guilds bot messages.read"; // Added 'guilds' scope
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&response_type=code&scope=${encodeURIComponent(scope)}`;

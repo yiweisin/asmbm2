@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 
 export default function DiscordDashboard() {
   const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState(null);
   const [servers, setServers] = useState([]);
   const [selectedServer, setSelectedServer] = useState(null);
   const [channels, setChannels] = useState([]);
@@ -22,32 +21,30 @@ export default function DiscordDashboard() {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const router = useRouter();
 
-  // Load Discord accounts when the page loads
+  // Load Discord accounts and servers when the page loads
   useEffect(() => {
-    async function loadAccounts() {
+    async function loadInitialData() {
       try {
-        const data = await discordService.getAccounts();
-        setAccounts(data);
+        // Load accounts
+        const accountsData = await discordService.getAccounts();
+        setAccounts(accountsData);
 
-        // Select the first account by default if available
-        if (data.length > 0) {
-          setSelectedAccount(data[0]);
-          loadServers(data[0].id);
-        } else {
-          setIsLoadingAccounts(false);
-        }
+        // Load servers directly using the bot
+        await loadServers();
+
+        setIsLoadingAccounts(false);
       } catch (error) {
-        console.error("Error loading Discord accounts:", error);
-        toast.error("Failed to load Discord accounts");
+        console.error("Error loading Discord data:", error);
+        toast.error("Failed to load Discord data");
         setIsLoadingAccounts(false);
       }
     }
 
-    loadAccounts();
+    loadInitialData();
   }, []);
 
-  // Load servers for the selected account
-  const loadServers = async (accountId) => {
+  // Load servers using the bot
+  const loadServers = async () => {
     setIsLoadingServers(true);
     setServers([]);
     setSelectedServer(null);
@@ -56,13 +53,13 @@ export default function DiscordDashboard() {
     setMessages([]);
 
     try {
-      const data = await discordService.getServers(accountId);
+      const data = await discordService.getServers();
       setServers(data);
 
       // Select the first server by default if available
       if (data.length > 0) {
         setSelectedServer(data[0]);
-        loadChannels(accountId, data[0].id);
+        loadChannels(data[0].id);
       }
     } catch (error) {
       console.error("Error loading Discord servers:", error);
@@ -73,22 +70,20 @@ export default function DiscordDashboard() {
   };
 
   // Load channels for the selected server
-  const loadChannels = async (accountId, serverId) => {
+  const loadChannels = async (serverId) => {
     setIsLoadingChannels(true);
     setChannels([]);
     setSelectedChannel(null);
     setMessages([]);
 
     try {
-      const data = await discordService.getChannels(accountId, serverId);
-      // Filter to only text channels
-      const textChannels = data.filter((channel) => channel.type === 0);
-      setChannels(textChannels);
+      const data = await discordService.getChannels(serverId);
+      setChannels(data);
 
       // Select the first channel by default if available
-      if (textChannels.length > 0) {
-        setSelectedChannel(textChannels[0]);
-        loadMessages(accountId, textChannels[0].id);
+      if (data.length > 0) {
+        setSelectedChannel(data[0]);
+        loadMessages(data[0].id);
       }
     } catch (error) {
       console.error("Error loading Discord channels:", error);
@@ -99,12 +94,12 @@ export default function DiscordDashboard() {
   };
 
   // Load messages for the selected channel
-  const loadMessages = async (accountId, channelId) => {
+  const loadMessages = async (channelId) => {
     setIsLoadingMessages(true);
     setMessages([]);
 
     try {
-      const data = await discordService.getMessages(accountId, channelId);
+      const data = await discordService.getMessages(channelId);
       setMessages(data);
     } catch (error) {
       console.error("Error loading Discord messages:", error);
@@ -114,23 +109,13 @@ export default function DiscordDashboard() {
     }
   };
 
-  // Handle account selection change
-  const handleAccountChange = (event) => {
-    const accountId = parseInt(event.target.value);
-    const account = accounts.find((acc) => acc.id === accountId);
-    setSelectedAccount(account);
-    if (account) {
-      loadServers(account.id);
-    }
-  };
-
   // Handle server selection change
   const handleServerChange = (event) => {
     const serverId = event.target.value;
     const server = servers.find((s) => s.id === serverId);
     setSelectedServer(server);
-    if (server && selectedAccount) {
-      loadChannels(selectedAccount.id, server.id);
+    if (server) {
+      loadChannels(server.id);
     }
   };
 
@@ -139,8 +124,8 @@ export default function DiscordDashboard() {
     const channelId = event.target.value;
     const channel = channels.find((c) => c.id === channelId);
     setSelectedChannel(channel);
-    if (channel && selectedAccount) {
-      loadMessages(selectedAccount.id, channel.id);
+    if (channel) {
+      loadMessages(channel.id);
     }
   };
 
@@ -148,23 +133,19 @@ export default function DiscordDashboard() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
-    if (!selectedAccount || !selectedChannel || !newMessage.trim()) {
+    if (!selectedChannel || !newMessage.trim()) {
       toast.error("Please select a channel and enter a message");
       return;
     }
 
     setIsSendingMessage(true);
     try {
-      await discordService.sendMessage(
-        selectedAccount.id,
-        selectedChannel.id,
-        newMessage
-      );
+      await discordService.sendMessage(selectedChannel.id, newMessage);
       toast.success("Message sent successfully!");
       setNewMessage("");
 
       // Refresh messages
-      loadMessages(selectedAccount.id, selectedChannel.id);
+      loadMessages(selectedChannel.id);
     } catch (error) {
       console.error("Error sending Discord message:", error);
       toast.error("Failed to send message. Please try again.");
@@ -180,13 +161,15 @@ export default function DiscordDashboard() {
     return date.toLocaleString();
   };
 
+  const needsToConnect = accounts.length === 0;
+
   return (
     <div className="space-y-6">
       <div className="pb-5 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-900">Discord Dashboard</h1>
       </div>
 
-      {accounts.length === 0 ? (
+      {needsToConnect ? (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
           <div className="text-center">
             <svg
@@ -215,29 +198,6 @@ export default function DiscordDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Account selector */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-            <label
-              htmlFor="account-select"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Select Discord Account
-            </label>
-            <select
-              id="account-select"
-              value={selectedAccount?.id || ""}
-              onChange={handleAccountChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              disabled={isLoadingAccounts}
-            >
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.username}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Main content area: Servers, Channels, Messages */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-200">
@@ -271,21 +231,21 @@ export default function DiscordDashboard() {
                       <h4 className="text-sm font-medium text-gray-900">
                         {selectedServer?.name}
                       </h4>
-                      {selectedServer?.icon && (
+                      {selectedServer?.iconUrl && (
                         <img
-                          src={`https://cdn.discordapp.com/icons/${selectedServer.id}/${selectedServer.icon}.png`}
+                          src={selectedServer.iconUrl}
                           alt={selectedServer.name}
                           className="mt-2 h-16 w-16 rounded-full"
                         />
                       )}
                       <p className="mt-2 text-xs text-gray-500">
-                        {selectedServer?.member_count || 0} members
+                        {selectedServer?.memberCount || 0} members
                       </p>
                     </div>
                   </div>
                 ) : (
                   <p className="text-gray-500 text-sm">
-                    No servers found for this account
+                    No servers found that your bot has access to
                   </p>
                 )}
               </div>
@@ -331,7 +291,7 @@ export default function DiscordDashboard() {
                             }`}
                             onClick={() => {
                               setSelectedChannel(channel);
-                              loadMessages(selectedAccount.id, channel.id);
+                              loadMessages(channel.id);
                             }}
                           >
                             <span className="font-medium text-gray-900">
@@ -373,9 +333,9 @@ export default function DiscordDashboard() {
                               className="bg-gray-50 rounded-md p-3"
                             >
                               <div className="flex items-start">
-                                {message.author?.avatar ? (
+                                {message.author?.avatarUrl ? (
                                   <img
-                                    src={`https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}.png`}
+                                    src={message.author.avatarUrl}
                                     alt={message.author.username}
                                     className="h-8 w-8 rounded-full mr-2"
                                   />
@@ -394,7 +354,7 @@ export default function DiscordDashboard() {
                                       {message.author?.username || "Unknown"}
                                     </span>
                                     <span className="ml-2 text-xs text-gray-500">
-                                      {formatMessageDate(message.timestamp)}
+                                      {formatMessageDate(message.createdAt)}
                                     </span>
                                   </div>
                                   <p className="mt-1 text-sm text-gray-700">
