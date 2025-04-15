@@ -29,8 +29,9 @@ export default function DiscordDashboard() {
         const accountsData = await discordService.getAccounts();
         setAccounts(accountsData);
 
-        // Load servers directly using the bot
-        await loadServers();
+        if (accountsData && accountsData.length > 0) {
+          await loadServers();
+        }
 
         setIsLoadingAccounts(false);
       } catch (error) {
