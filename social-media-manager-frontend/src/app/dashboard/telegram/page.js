@@ -3,25 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { telegramService, authService } from "@/services/api";
-import {
-  Button,
-  TextField,
-  Card,
-  Typography,
-  Box,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Snackbar,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SendIcon from "@mui/icons-material/Send";
-import AddIcon from "@mui/icons-material/Add";
+import toast from "react-hot-toast";
 
 export default function TelegramPage() {
   const router = useRouter();
@@ -30,23 +12,18 @@ export default function TelegramPage() {
   const [error, setError] = useState(null);
   const [botToken, setBotToken] = useState("");
   const [connectLoading, setConnectLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
 
   // Message Dialog state
-  const [messageDialog, setMessageDialog] = useState({
-    open: false,
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [messageInfo, setMessageInfo] = useState({
     accountId: null,
     chatId: "",
     message: "",
   });
 
   // Confirmation Dialog state
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmInfo, setConfirmInfo] = useState({
     accountId: null,
     username: "",
   });
@@ -70,6 +47,7 @@ export default function TelegramPage() {
       setError(null);
     } catch (err) {
       setError("Failed to load Telegram accounts: " + (err.error || err));
+      toast.error("Failed to load Telegram accounts");
     } finally {
       setLoading(false);
     }
@@ -80,11 +58,7 @@ export default function TelegramPage() {
     e.preventDefault();
 
     if (!botToken) {
-      setSnackbar({
-        open: true,
-        message: "Please enter a bot token",
-        severity: "error",
-      });
+      toast.error("Please enter a bot token");
       return;
     }
 
@@ -93,17 +67,9 @@ export default function TelegramPage() {
       await telegramService.connect(botToken);
       await loadAccounts();
       setBotToken("");
-      setSnackbar({
-        open: true,
-        message: "Telegram bot connected successfully!",
-        severity: "success",
-      });
+      toast.success("Telegram bot connected successfully!");
     } catch (err) {
-      setSnackbar({
-        open: true,
-        message: "Failed to connect Telegram bot: " + (err.error || err),
-        severity: "error",
-      });
+      toast.error("Failed to connect Telegram bot: " + (err.error || err));
     } finally {
       setConnectLoading(false);
     }
@@ -114,356 +80,269 @@ export default function TelegramPage() {
     try {
       await telegramService.deleteAccount(accountId);
       await loadAccounts();
-      setSnackbar({
-        open: true,
-        message: "Telegram account deleted successfully!",
-        severity: "success",
-      });
+      toast.success("Telegram account deleted successfully!");
     } catch (err) {
-      setSnackbar({
-        open: true,
-        message: "Failed to delete Telegram account: " + (err.error || err),
-        severity: "error",
-      });
+      toast.error("Failed to delete Telegram account: " + (err.error || err));
     }
   };
 
   // Open confirmation dialog
   const openConfirmDialog = (account) => {
-    setConfirmDialog({
-      open: true,
+    setConfirmInfo({
       accountId: account.id,
       username: account.username,
     });
+    setShowConfirmDialog(true);
   };
 
   // Close confirmation dialog
   const closeConfirmDialog = () => {
-    setConfirmDialog({
-      open: false,
-      accountId: null,
-      username: "",
-    });
+    setShowConfirmDialog(false);
   };
 
   // Open message dialog
   const openMessageDialog = (accountId) => {
-    setMessageDialog({
-      open: true,
+    setMessageInfo({
       accountId,
       chatId: "",
       message: "",
     });
+    setShowMessageDialog(true);
   };
 
   // Close message dialog
   const closeMessageDialog = () => {
-    setMessageDialog({
-      open: false,
-      accountId: null,
-      chatId: "",
-      message: "",
-    });
+    setShowMessageDialog(false);
   };
 
   // Send message
   const handleSendMessage = async () => {
-    const { accountId, chatId, message } = messageDialog;
+    const { accountId, chatId, message } = messageInfo;
 
     if (!chatId || !message) {
-      setSnackbar({
-        open: true,
-        message: "Please enter both chat ID and message",
-        severity: "error",
-      });
+      toast.error("Please enter both chat ID and message");
       return;
     }
-
-    // Add helper for getting chat ID
-    const openChatIdHelper = () => {
-      const token = prompt(
-        "Enter your bot token to access the getUpdates API (only used in browser, not stored):"
-      );
-      if (token) {
-        window.open(
-          `https://api.telegram.org/bot${token}/getUpdates`,
-          "_blank"
-        );
-      }
-    };
 
     try {
       await telegramService.sendMessage(accountId, chatId, message);
       closeMessageDialog();
-      setSnackbar({
-        open: true,
-        message: "Message sent successfully!",
-        severity: "success",
-      });
+      toast.success("Message sent successfully!");
     } catch (err) {
-      setSnackbar({
-        open: true,
-        message: "Failed to send message: " + (err.error || err),
-        severity: "error",
-      });
+      toast.error("Failed to send message: " + (err.error || err));
     }
   };
 
-  // Close snackbar
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+  // Helper for getting chat ID
+  const openChatIdHelper = () => {
+    const token = prompt(
+      "Enter your bot token to access the getUpdates API (only used in browser, not stored):"
+    );
+    if (token) {
+      window.open(`https://api.telegram.org/bot${token}/getUpdates`, "_blank");
+    }
   };
 
   if (loading && accounts.length === 0) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-screen">
+        <div className="loading-spinner"></div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Telegram Accounts
-      </Typography>
+    <div className="max-w-3xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Telegram Accounts</h1>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
           {error}
-        </Alert>
+        </div>
       )}
 
       {/* Connect new Telegram bot */}
-      <Card sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Connect Telegram Bot
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
+      <div className="bg-white p-4 rounded shadow mb-6">
+        <h2 className="text-xl font-semibold mb-2">Connect Telegram Bot</h2>
+        <p className="text-gray-600 mb-4">
           Enter your Telegram bot token to connect. You can create a new bot and
           get its token from the BotFather.
-        </Typography>
-        <Box sx={{ mb: 2, p: 1, bgcolor: "info.light", borderRadius: 1 }}>
-          <Typography variant="subtitle2" color="info.contrastText">
+        </p>
+        <div className="bg-blue-50 p-3 rounded mb-4">
+          <h3 className="font-semibold text-blue-800">
             How to create a Telegram bot and get a token:
-          </Typography>
-          <ol style={{ margin: "8px 0 0 20px", paddingLeft: 0 }}>
+          </h3>
+          <ol className="ml-5 mt-2">
             <li>Open Telegram and search for @BotFather</li>
             <li>Start a chat and send the command /newbot</li>
             <li>Follow the instructions to name your bot</li>
             <li>BotFather will provide you with a token (keep it secure)</li>
             <li>Copy the token and paste it here to connect your bot</li>
           </ol>
-        </Box>
-        <Box
-          component="form"
-          onSubmit={handleConnect}
-          sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}
-        >
-          <TextField
-            label="Bot Token"
-            variant="outlined"
-            fullWidth
+        </div>
+        <form onSubmit={handleConnect} className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 border p-2 rounded"
             value={botToken}
             onChange={(e) => setBotToken(e.target.value)}
             placeholder="Enter your Telegram bot token"
             required
           />
-          <Button
-            variant="contained"
-            color="primary"
+          <button
             type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded flex items-center"
             disabled={connectLoading}
-            startIcon={
-              connectLoading ? <CircularProgress size={24} /> : <AddIcon />
-            }
           >
+            {connectLoading ? (
+              <span className="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            ) : (
+              <span className="mr-2">+</span>
+            )}
             Connect
-          </Button>
-        </Box>
-      </Card>
+          </button>
+        </form>
+      </div>
 
       {/* Account list */}
-      <Typography variant="h6" gutterBottom>
-        Your Telegram Bots
-      </Typography>
+      <h2 className="text-xl font-semibold mb-4">Your Telegram Bots</h2>
 
       {accounts.length === 0 ? (
-        <Typography variant="body1" color="text.secondary">
+        <p className="text-gray-600">
           You don't have any Telegram bots connected yet.
-        </Typography>
+        </p>
       ) : (
         accounts.map((account) => (
-          <Card key={account.id} sx={{ mb: 2, p: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Box>
-                <Typography variant="h6">@{account.username}</Typography>
-                <Typography variant="body2" color="text.secondary">
+          <div key={account.id} className="bg-white p-4 rounded shadow mb-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold">@{account.username}</h3>
+                <p className="text-gray-600 text-sm">
                   ID: {account.telegramId}
-                </Typography>
-              </Box>
-              <Box>
-                <IconButton
-                  color="primary"
+                </p>
+              </div>
+              <div>
+                <button
+                  className="text-blue-500 mr-2"
                   onClick={() => openMessageDialog(account.id)}
                   title="Send Message"
                 >
-                  <SendIcon />
-                </IconButton>
-                <IconButton
-                  color="error"
+                  Send
+                </button>
+                <button
+                  className="text-red-500"
                   onClick={() => openConfirmDialog(account)}
                   title="Delete Account"
                 >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            </Box>
-          </Card>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         ))
       )}
 
       {/* Confirmation Dialog */}
-      <Dialog open={confirmDialog.open} onClose={closeConfirmDialog}>
-        <DialogTitle>Delete Telegram Bot</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete the Telegram bot @
-            {confirmDialog.username}? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeConfirmDialog} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              handleDelete(confirmDialog.accountId);
-              closeConfirmDialog();
-            }}
-            color="error"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Delete Telegram Bot</h2>
+            <p className="mb-6">
+              Are you sure you want to delete the Telegram bot @
+              {confirmInfo.username}? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded"
+                onClick={closeConfirmDialog}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded"
+                onClick={() => {
+                  handleDelete(confirmInfo.accountId);
+                  closeConfirmDialog();
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Message Dialog */}
-      <Dialog
-        open={messageDialog.open}
-        onClose={closeMessageDialog}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Send Telegram Message</DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Enter the chat ID and message content to send a message through your
-            Telegram bot.
-          </DialogContentText>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            <strong>How to get a Chat ID:</strong>
-            <ul>
-              <li>
-                For users: Ask them to message your bot first, then access
-                Telegram API with <code>getUpdates</code> method.
-              </li>
-              <li>
-                For groups: Add your bot to the group, then check{" "}
-                <code>getUpdates</code> API response.
-              </li>
-              <li>
-                Alternatively, add @RawDataBot or @getidsbot to your group to
-                get the chat ID.
-              </li>
-            </ul>
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-            <TextField
-              label="Chat ID"
-              fullWidth
-              margin="dense"
-              value={messageDialog.chatId}
-              onChange={(e) =>
-                setMessageDialog({ ...messageDialog, chatId: e.target.value })
-              }
-              helperText="Enter the chat ID where you want to send the message"
-              required
-            />
-            <Button
-              variant="outlined"
-              size="small"
-              sx={{ mt: 1 }}
-              onClick={() => {
-                const token = prompt(
-                  "Enter your bot token to access the getUpdates API (only used in browser, not stored):"
-                );
-                if (token) {
-                  window.open(
-                    `https://api.telegram.org/bot${token}/getUpdates`,
-                    "_blank"
-                  );
+      {showMessageDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Send Telegram Message</h2>
+            <p className="mb-4">
+              Enter the chat ID and message content to send a message through
+              your Telegram bot.
+            </p>
+            <div className="mb-4 text-sm text-gray-600">
+              <strong>How to get a Chat ID:</strong>
+              <ul className="ml-5 mt-1">
+                <li>
+                  For users: Ask them to message your bot first, then access
+                  Telegram API with <code>getUpdates</code> method.
+                </li>
+                <li>
+                  For groups: Add your bot to the group, then check{" "}
+                  <code>getUpdates</code> API response.
+                </li>
+                <li>
+                  Alternatively, add @RawDataBot or @getidsbot to your group to
+                  get the chat ID.
+                </li>
+              </ul>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                className="flex-1 border p-2 rounded"
+                placeholder="Chat ID"
+                value={messageInfo.chatId}
+                onChange={(e) =>
+                  setMessageInfo({ ...messageInfo, chatId: e.target.value })
                 }
-              }}
-            >
-              Find ID
-            </Button>
-          </Box>
-          <TextField
-            label="Message"
-            fullWidth
-            multiline
-            rows={4}
-            margin="dense"
-            value={messageDialog.message}
-            onChange={(e) =>
-              setMessageDialog({ ...messageDialog, message: e.target.value })
-            }
-            helperText="Enter the message content"
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeMessageDialog} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSendMessage}
-            color="primary"
-            startIcon={<SendIcon />}
-          >
-            Send
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+                required
+              />
+              <button
+                className="px-3 py-1 border rounded"
+                onClick={openChatIdHelper}
+              >
+                Find ID
+              </button>
+            </div>
+            <textarea
+              className="w-full border p-2 rounded mb-4"
+              rows="4"
+              placeholder="Enter your message"
+              value={messageInfo.message}
+              onChange={(e) =>
+                setMessageInfo({ ...messageInfo, message: e.target.value })
+              }
+              required
+            ></textarea>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded"
+                onClick={closeMessageDialog}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded flex items-center"
+                onClick={handleSendMessage}
+              >
+                <span className="mr-1">→</span> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

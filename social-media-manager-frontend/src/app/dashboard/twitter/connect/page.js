@@ -85,13 +85,11 @@ export default function TwitterConnectPage() {
       toast.success("Twitter account connected successfully!");
       router.push("/dashboard");
     } catch (error) {
-      console.error("Error connecting Twitter account:", error);
+      console.log("Error connecting Twitter account:", error);
 
       // Check for specific error messages
       if (error.includes && error.includes("authorization code was invalid")) {
         toast.error("Authorization expired. Please try connecting again.");
-      } else {
-        toast.error("Failed to connect Twitter account. Please try again.");
       }
     } finally {
       setIsConnecting(false);

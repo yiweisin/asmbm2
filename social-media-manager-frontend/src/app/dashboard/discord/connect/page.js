@@ -36,8 +36,7 @@ export default function DiscordConnectPage() {
       toast.success("Discord account connected successfully!");
       router.push("/dashboard");
     } catch (error) {
-      console.error("Error connecting Discord account:", error);
-      toast.error("Failed to connect Discord account. Please try again.");
+      console.log("Error connecting Discord account:", error);
     } finally {
       setIsConnecting(false);
     }
