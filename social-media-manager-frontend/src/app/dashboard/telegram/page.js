@@ -10,8 +10,7 @@ export default function TelegramPage() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [botToken, setBotToken] = useState("");
-  const [connectLoading, setConnectLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Message Dialog state
   const [showMessageDialog, setShowMessageDialog] = useState(false);
@@ -28,12 +27,16 @@ export default function TelegramPage() {
     username: "",
   });
 
-  // Check if user is logged in
+  // Check if user is logged in and load accounts
   useEffect(() => {
     if (!authService.isLoggedIn()) {
       router.push("/login");
       return;
     }
+
+    // Get current user details including account type
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
 
     loadAccounts();
   }, [router]);
@@ -53,26 +56,24 @@ export default function TelegramPage() {
     }
   };
 
-  // Connect new Telegram account
-  const handleConnect = async (e) => {
-    e.preventDefault();
+  // Check if user is premium
+  const isPremiumUser = () => {
+    return currentUser?.accountType === "premium";
+  };
 
-    if (!botToken) {
-      toast.error("Please enter a bot token");
-      return;
+  // Check if user can add more bots
+  const canAddMoreBots = () => {
+    // Only premium users can add more bots
+    if (isPremiumUser()) {
+      return true;
     }
+    // Non-premium users can add a bot if they don't have any
+    return accounts.length === 0;
+  };
 
-    try {
-      setConnectLoading(true);
-      await telegramService.connect(botToken);
-      await loadAccounts();
-      setBotToken("");
-      toast.success("Telegram bot connected successfully!");
-    } catch (err) {
-      toast.error("Failed to connect Telegram bot: " + (err.error || err));
-    } finally {
-      setConnectLoading(false);
-    }
+  // Navigate to connect page
+  const handleAddBot = () => {
+    router.push("/dashboard/telegram/connect");
   };
 
   // Delete Telegram account
@@ -143,7 +144,7 @@ export default function TelegramPage() {
     }
   };
 
-  if (loading && accounts.length === 0) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="loading-spinner"></div>
@@ -153,7 +154,7 @@ export default function TelegramPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Telegram Accounts</h1>
+      <h1 className="text-2xl font-bold mb-4">Telegram Bots</h1>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
@@ -161,51 +162,37 @@ export default function TelegramPage() {
         </div>
       )}
 
-      {/* Connect new Telegram bot */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-semibold mb-2">Connect Telegram Bot</h2>
-        <p className="text-gray-600 mb-4">
-          Enter your Telegram bot token to connect. You can create a new bot and
-          get its token from the BotFather.
-        </p>
-        <div className="bg-blue-50 p-3 rounded mb-4">
-          <h3 className="font-semibold text-blue-800">
-            How to create a Telegram bot and get a token:
-          </h3>
-          <ol className="ml-5 mt-2">
-            <li>Open Telegram and search for @BotFather</li>
-            <li>Start a chat and send the command /newbot</li>
-            <li>Follow the instructions to name your bot</li>
-            <li>BotFather will provide you with a token (keep it secure)</li>
-            <li>Copy the token and paste it here to connect your bot</li>
-          </ol>
-        </div>
-        <form onSubmit={handleConnect} className="flex gap-2">
-          <input
-            type="text"
-            className="flex-1 border p-2 rounded"
-            value={botToken}
-            onChange={(e) => setBotToken(e.target.value)}
-            placeholder="Enter your Telegram bot token"
-            required
-          />
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Your Bots</h2>
+        {canAddMoreBots() && (
           <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded flex items-center"
-            disabled={connectLoading}
+            className="px-3 py-1 bg-blue-500 text-white rounded"
+            onClick={handleAddBot}
           >
-            {connectLoading ? (
-              <span className="inline-block mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              <span className="mr-2">+</span>
-            )}
-            Connect
+            Connect New Bot
           </button>
-        </form>
+        )}
       </div>
 
-      {/* Account list */}
-      <h2 className="text-xl font-semibold mb-4">Your Telegram Bots</h2>
+      {!isPremiumUser() && accounts.length > 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Upgrade to Premium to connect multiple Telegram bots.
+              </p>
+              <p className="mt-2">
+                <button
+                  className="text-sm text-yellow-700 underline"
+                  onClick={() => router.push("/dashboard/profile")}
+                >
+                  Upgrade now
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {accounts.length === 0 ? (
         <p className="text-gray-600">
@@ -244,7 +231,7 @@ export default function TelegramPage() {
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Delete Telegram Bot</h2>
             <p className="mb-6">
@@ -274,30 +261,10 @@ export default function TelegramPage() {
 
       {/* Message Dialog */}
       {showMessageDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Send Telegram Message</h2>
-            <p className="mb-4">
-              Enter the chat ID and message content to send a message through
-              your Telegram bot.
-            </p>
-            <div className="mb-4 text-sm text-gray-600">
-              <strong>How to get a Chat ID:</strong>
-              <ul className="ml-5 mt-1">
-                <li>
-                  For users: Ask them to message your bot first, then access
-                  Telegram API with <code>getUpdates</code> method.
-                </li>
-                <li>
-                  For groups: Add your bot to the group, then check{" "}
-                  <code>getUpdates</code> API response.
-                </li>
-                <li>
-                  Alternatively, add @RawDataBot or @getidsbot to your group to
-                  get the chat ID.
-                </li>
-              </ul>
-            </div>
+
             <div className="flex gap-2 mb-4">
               <input
                 type="text"

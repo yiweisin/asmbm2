@@ -38,12 +38,13 @@ export default function Profile() {
       title: "Business",
       description: "For small business owners",
       features: [
-        "Connect up to 10 social accounts",
+        "Connect up to 3 social accounts",
         "Advanced scheduling",
         "Detailed analytics",
+        "Auto-reply functionality",
         "Content suggestions",
       ],
-      limit: 10,
+      limit: 3,
     },
     premium: {
       title: "Premium",
@@ -52,6 +53,7 @@ export default function Profile() {
         "Unlimited social accounts",
         "Team collaboration",
         "Advanced analytics",
+        "Advanced auto-reply with AI",
         "API access",
         "Priority support",
       ],

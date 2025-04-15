@@ -1,6 +1,18 @@
+"use client";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/services/api";
 
 export default function HomePage() {
+  const router = useRouter();
+
+  // Check if user is logged in and redirect to dashboard
+  useEffect(() => {
+    if (authService.isLoggedIn()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
   return (
     <div className="bg-white min-h-screen">
       <div className="relative overflow-hidden">

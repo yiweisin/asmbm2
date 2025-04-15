@@ -1,14 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { telegramService } from "@/services/api";
+import { telegramService, authService } from "@/services/api";
 import toast from "react-hot-toast";
 
 export default function TelegramConnectPage() {
   const router = useRouter();
   const [botToken, setBotToken] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check user eligibility on page load
+  useEffect(() => {
+    async function checkEligibility() {
+      try {
+        setLoading(true);
+
+        // Check if user is logged in
+        if (!authService.isLoggedIn()) {
+          router.push("/login");
+          return;
+        }
+
+        // Get current user details
+        const currentUser = authService.getCurrentUser();
+        const isPremiumUser = currentUser?.accountType === "premium";
+
+        // Get existing accounts
+        const accounts = await telegramService.getAccounts();
+
+        // If user already has a bot and is not premium, redirect to profile page
+        if (accounts.length > 0 && !isPremiumUser) {
+          toast.error("Upgrade to Premium to connect multiple Telegram bots");
+          router.push("/dashboard/profile");
+          return;
+        }
+      } catch (error) {
+        console.error("Error checking eligibility:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkEligibility();
+  }, [router]);
 
   const handleConnect = async (e) => {
     e.preventDefault();
@@ -21,22 +57,32 @@ export default function TelegramConnectPage() {
     setIsConnecting(true);
     try {
       await telegramService.connect(botToken);
-      toast.success("Telegram account connected successfully!");
-      router.push("/dashboard");
+      toast.success("Telegram bot connected successfully!");
+      router.push("/dashboard/telegram");
     } catch (error) {
-      console.error("Error connecting Telegram account:", error);
+      console.error("Error connecting Telegram bot:", error);
       toast.error(
-        "Failed to connect Telegram account. Please check your bot token and try again."
+        "Failed to connect Telegram bot. Please check your token and try again."
       );
     } finally {
       setIsConnecting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-5 pb-5 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Connect Telegram</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Connect Telegram Bot
+        </h1>
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -86,14 +132,14 @@ export default function TelegramConnectPage() {
                     value={botToken}
                     onChange={(e) => setBotToken(e.target.value)}
                     placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-                    className="mt-1 focus:ring-green-500 focus:border-green-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isConnecting}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {isConnecting ? "Connecting..." : "Connect Telegram Bot"}
                 </button>
