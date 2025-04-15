@@ -414,4 +414,26 @@ export const scheduleService = {
   },
 };
 
+export const aiService = {
+  // Generate text using Gemini AI
+  generateText: async (prompt, platform = null, maxLength = 1024) => {
+    try {
+      const response = await api.post("/ai/generate", {
+        prompt,
+        platform,
+        maxLength,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 429) {
+        throw { error: "AI request limit exceeded. Please try again later." };
+      } else if (error.response?.status === 400) {
+        throw { error: "Invalid prompt. Please revise your request." };
+      } else {
+        throw error.response?.data || { error: error.message };
+      }
+    }
+  },
+};
+
 export default api;

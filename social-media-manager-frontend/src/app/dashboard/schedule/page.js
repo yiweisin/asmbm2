@@ -11,6 +11,7 @@ import {
 } from "@/services/api";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+import AITextGenerator from "@/components/AiTextGenerator";
 
 // Format date for datetime-local input with timezone awareness
 function formatDateTimeForInput(date) {
@@ -656,6 +657,14 @@ export default function ScheduleComponent() {
                     placeholder="What do you want to post?"
                     maxLength={newPost.platform === "twitter" ? 280 : 2000}
                   ></textarea>
+                  <div className="mt-1">
+                    <AITextGenerator
+                      onTextGenerated={(text) =>
+                        setNewPost((prev) => ({ ...prev, content: text }))
+                      }
+                      platform={newPost.platform}
+                    />
+                  </div>
                   {newPost.platform === "twitter" && (
                     <div className="text-xs text-right mt-1 text-gray-500">
                       {newPost.content.length}/280
@@ -745,6 +754,14 @@ export default function ScheduleComponent() {
                     className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     maxLength={postToEdit.platform === "twitter" ? 280 : 2000}
                   ></textarea>
+                  <div className="mt-1">
+                    <AITextGenerator
+                      onTextGenerated={(text) =>
+                        setNewPost((prev) => ({ ...prev, content: text }))
+                      }
+                      platform={newPost.platform}
+                    />
+                  </div>
                   {postToEdit.platform === "twitter" && (
                     <div className="text-xs text-right mt-1 text-gray-500">
                       {postToEdit.content.length}/280
