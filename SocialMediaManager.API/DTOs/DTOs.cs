@@ -200,4 +200,42 @@ namespace SocialMediaManager.API.DTOs
         public string Date { get; set; }
         public double Value { get; set; }
     }
+    public class ScheduledPostDTO
+    {
+        public int Id { get; set; }
+        public string Platform { get; set; }
+        public int PlatformAccountId { get; set; }
+        public string TargetId { get; set; }
+        public string Content { get; set; }
+        public DateTime ScheduledTime { get; set; }
+        public DateTime? PostedTime { get; set; }
+        public string Status { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+    
+    public class CreateScheduledPostDTO
+    {
+        [Required]
+        public string Platform { get; set; }
+        
+        [Required]
+        public int PlatformAccountId { get; set; }
+        
+        public string TargetId { get; set; } // Required for Discord and Telegram
+        
+        [Required]
+        [StringLength(280)] // Max tweet length
+        public string Content { get; set; }
+        
+        [Required]
+        public DateTime ScheduledTime { get; set; }
+    }
+    
+    public class UpdateScheduledPostDTO
+    {
+        [StringLength(280)] // Max tweet length
+        public string Content { get; set; }
+        
+        public DateTime ScheduledTime { get; set; }
+    }
 }

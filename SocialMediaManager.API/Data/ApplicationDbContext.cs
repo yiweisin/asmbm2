@@ -14,20 +14,43 @@ namespace SocialMediaManager.API.Data
         public DbSet<TwitterAccount> TwitterAccounts { get; set; }
         public DbSet<DiscordAccount> DiscordAccounts { get; set; }
         public DbSet<TelegramAccount> TelegramAccounts { get; set; }
-        
-        // Add this line to fix the error:
         public DbSet<TwitterDailyMetric> TwitterDailyMetrics { get; set; }
+        public DbSet<ScheduledPost> ScheduledPosts { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Existing relationships...
-            
-            // You might want to add the relationship for TwitterDailyMetric too:
+            // Existing relationships
             modelBuilder.Entity<TwitterAccount>()
                 .HasMany(a => a.DailyMetrics)
                 .WithOne(m => m.TwitterAccount)
                 .HasForeignKey(m => m.TwitterAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
+                
+            // ScheduledPost relationships
+            modelBuilder.Entity<ScheduledPost>()
+                .HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            // Configure ErrorMessage to have a default empty string
+            modelBuilder.Entity<ScheduledPost>()
+                .Property(p => p.ErrorMessage)
+                .HasDefaultValue("");
+                
+            // Additional configuration for ScheduledPost
+            modelBuilder.Entity<ScheduledPost>()
+                .Property(p => p.Status)
+                .HasDefaultValue("scheduled");
+                
+            modelBuilder.Entity<ScheduledPost>()
+                .Property(p => p.Platform)
+                .IsRequired();
+                
+            // Make TargetId nullable in the database
+            modelBuilder.Entity<ScheduledPost>()
+                .Property(p => p.TargetId)
+                .IsRequired(false);
         }
     }
 }

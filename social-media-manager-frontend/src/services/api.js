@@ -368,4 +368,50 @@ export const telegramService = {
   },
 };
 
+export const scheduleService = {
+  // Get all scheduled posts
+  getScheduledPosts: async (status = null) => {
+    try {
+      let url = "/schedule";
+      if (status) {
+        url += `?status=${status}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Create a new scheduled post
+  createScheduledPost: async (postData) => {
+    try {
+      const response = await api.post("/schedule", postData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update a scheduled post
+  updateScheduledPost: async (id, postData) => {
+    try {
+      const response = await api.put(`/schedule/${id}`, postData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Delete a scheduled post
+  deleteScheduledPost: async (id) => {
+    try {
+      const response = await api.delete(`/schedule/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+};
+
 export default api;

@@ -44,8 +44,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Register the background service for Twitter metrics collection
+// Register the background services
 builder.Services.AddHostedService<TwitterMetricsService>();
+builder.Services.AddHostedService<SchedulerService>(); // Add the scheduler service
 
 // Add logging
 builder.Services.AddLogging();
