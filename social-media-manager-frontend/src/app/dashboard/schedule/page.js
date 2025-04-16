@@ -107,7 +107,7 @@ export default function ScheduleComponent() {
       setScheduledPosts(data);
     } catch (error) {
       toast.error("Failed to load scheduled posts");
-      console.error(error);
+      console.log(error);
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +146,7 @@ export default function ScheduleComponent() {
         }));
       }
     } catch (error) {
-      console.error("Failed to load accounts", error);
+      console.log("Failed to load accounts", error);
     }
   };
 
@@ -161,7 +161,7 @@ export default function ScheduleComponent() {
         loadDiscordChannels(servers[0].id);
       }
     } catch (error) {
-      console.error("Failed to load Discord servers", error);
+      console.log("Failed to load Discord servers", error);
     }
   };
 
@@ -175,7 +175,7 @@ export default function ScheduleComponent() {
         setNewPost((prev) => ({ ...prev, targetId: channels[0].id }));
       }
     } catch (error) {
-      console.error("Failed to load Discord channels", error);
+      console.log("Failed to load Discord channels", error);
     }
   };
 
@@ -270,7 +270,7 @@ export default function ScheduleComponent() {
       });
     } catch (error) {
       toast.error("Failed to schedule post");
-      console.error(error);
+      console.log(error);
     }
   };
 
@@ -302,7 +302,7 @@ export default function ScheduleComponent() {
       loadScheduledPosts();
     } catch (error) {
       toast.error("Failed to update post");
-      console.error(error);
+      console.log(error);
     }
   };
 
@@ -318,7 +318,7 @@ export default function ScheduleComponent() {
       loadScheduledPosts();
     } catch (error) {
       toast.error("Failed to delete post");
-      console.error(error);
+      console.log(error);
     }
   };
 

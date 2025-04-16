@@ -48,21 +48,21 @@ namespace SocialMediaManager.API.Controllers
                 switch (request.Platform?.ToLower())
                 {
                     case "twitter":
-                        platformPrompt = "Generate a Twitter post (maximum 280 characters) without any explanations or options. The post should include relevant hashtags. Just generate one post directly: ";
+                        platformPrompt = "Generate a Twitter post without any explanations or options. The post should include relevant hashtags. Just generate one post directly: ";
                         break;
                     case "discord":
-                        platformPrompt = "Generate a Discord message without any explanations or options. Just generate one message directly: ";
+                        platformPrompt = "Generate a Discord message without any explanations or options. Just generate one message directly about: ";
                         break;
                     case "telegram":
-                        platformPrompt = "Generate a Telegram message without any explanations or options. Just generate one message directly: ";
+                        platformPrompt = "Generate a Telegram message without any explanations or options. Just generate one message directly about: ";
                         break;
                     default:
-                        platformPrompt = "Generate a social media post without any explanations or options. Just generate one post directly: ";
+                        platformPrompt = "Generate a social media post without any explanations or options. Just generate one post directly about: ";
                         break;
                 }
                 
                 // Combine with user prompt
-                string fullPrompt = platformPrompt + request.Prompt;
+                string fullPrompt = platformPrompt + request.Prompt + "around 300 characters";
                 
                 // Set up Gemini request using the format from the curl example
                 var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_geminiApiKey}";
@@ -154,7 +154,7 @@ namespace SocialMediaManager.API.Controllers
     public class TextGenerationRequestDTO
     {
         public string Prompt { get; set; }
-        public string Platform { get; set; } // Optional: twitter, discord, telegram
+        public string Platform { get; set; }
         public int MaxLength { get; set; } = 1024; // Default max output tokens
     }
     

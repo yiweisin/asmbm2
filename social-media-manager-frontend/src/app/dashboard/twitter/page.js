@@ -1,17 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { twitterService } from "@/services/api";
 import toast from "react-hot-toast";
-import { BarChart } from "lucide-react";
+import {
+  BarChart,
+  Users,
+  MessageSquare,
+  PenSquare,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import AITextGenerator from "@/components/AiTextGenerator";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 // Helper function to manage local cache
-const getTweetCache = (accountId) => {
+const getTweetCache = () => {
   try {
-    const cache = localStorage.getItem(`twitter_timeline_${accountId}`);
+    const cache = localStorage.getItem(`twitter_timeline_cache`);
     if (cache) {
       const { data, timestamp } = JSON.parse(cache);
 
@@ -28,10 +44,10 @@ const getTweetCache = (accountId) => {
   }
 };
 
-const setTweetCache = (accountId, data) => {
+const setTweetCache = (data) => {
   try {
     localStorage.setItem(
-      `twitter_timeline_${accountId}`,
+      `twitter_timeline_cache`,
       JSON.stringify({
         data,
         timestamp: Date.now(),
@@ -43,8 +59,7 @@ const setTweetCache = (accountId, data) => {
 };
 
 export default function TwitterDashboard() {
-  const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [account, setAccount] = useState(null);
   const [tweets, setTweets] = useState([]);
   const [tweetText, setTweetText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -52,30 +67,50 @@ export default function TwitterDashboard() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshDisabled, setRefreshDisabled] = useState(false);
   const [refreshCountdown, setRefreshCountdown] = useState(0);
-  const router = useRouter();
+  const [accountStats, setAccountStats] = useState({
+    followers: 0,
+    following: 0,
+    tweetsPosted: 0,
+  });
+  const [analytics, setAnalytics] = useState({
+    followerData: [],
+    engagementData: [],
+    summaryStats: {
+      currentFollowers: 0,
+      followerGrowth: 0,
+      followerGrowthPercent: 0,
+      currentLikes: 0,
+      likeGrowth: 0,
+      likeGrowthPercent: 0,
+      currentViews: 0,
+      viewGrowth: 0,
+      viewGrowthPercent: 0,
+    },
+  });
+  const [timeRange, setTimeRange] = useState("7d"); // 7d, 30d, 90d
 
-  // Load Twitter accounts
+  // Load Twitter account
   useEffect(() => {
-    async function loadAccounts() {
+    async function loadAccount() {
       try {
         const data = await twitterService.getAccounts();
-        setAccounts(data);
 
-        // Select the first account by default if available
+        // Take the first account or null if none exists
         if (data.length > 0) {
-          setSelectedAccount(data[0]);
+          setAccount(data[0]);
           loadTweets(data[0].id);
+          loadAccountDetails(data[0].id);
         } else {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("Error loading Twitter accounts:", error);
-        toast.error("Failed to load Twitter accounts");
+        console.error("Error loading Twitter account:", error);
+        toast.error("Failed to load Twitter account");
         setIsLoading(false);
       }
     }
 
-    loadAccounts();
+    loadAccount();
   }, []);
 
   // Countdown refresh timer
@@ -95,7 +130,39 @@ export default function TwitterDashboard() {
     };
   }, [refreshCountdown, refreshDisabled]);
 
-  // Load tweets for the selected account
+  // Load account details (followers, following, tweet count) and analytics
+  const loadAccountDetails = async (accountId) => {
+    try {
+      // Get analytics for account stats
+      const analyticsData = await twitterService.getAnalytics(
+        accountId,
+        timeRange
+      );
+
+      // Extract account stats from analytics
+      setAccountStats({
+        followers: analyticsData.summaryStats.currentFollowers || 0,
+        following: 0, // Not provided in analytics, could be added to backend later
+        tweetsPosted: tweets.length || 0,
+      });
+
+      // Set full analytics data
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error("Error loading account details:", error);
+      // Don't show error toast as this is supplementary data
+    }
+  };
+
+  // Handle time range change for analytics
+  const handleTimeRangeChange = (range) => {
+    setTimeRange(range);
+    if (account) {
+      loadAccountDetails(account.id);
+    }
+  };
+
+  // Load tweets for the account
   const loadTweets = async (accountId, forceRefresh = false) => {
     if (refreshDisabled && !forceRefresh) {
       toast.error(`Please wait ${refreshCountdown} seconds before refreshing`);
@@ -106,7 +173,7 @@ export default function TwitterDashboard() {
 
     // Try to get cached tweets first if not forcing refresh
     if (!forceRefresh) {
-      const cachedTweets = getTweetCache(accountId);
+      const cachedTweets = getTweetCache();
       if (cachedTweets) {
         console.log("Using cached tweets");
         setTweets(cachedTweets.data || []);
@@ -131,8 +198,14 @@ export default function TwitterDashboard() {
       // Save to local cache
       if (data && data.data) {
         setTweets(data.data);
-        setTweetCache(accountId, data);
+        setTweetCache(data);
         setLastUpdated(new Date());
+
+        // Update tweets posted count
+        setAccountStats((prev) => ({
+          ...prev,
+          tweetsPosted: data.data.length || 0,
+        }));
       } else {
         setTweets([]);
       }
@@ -163,7 +236,7 @@ export default function TwitterDashboard() {
         }
 
         // Try to use cached tweets
-        const cachedTweets = getTweetCache(accountId);
+        const cachedTweets = getTweetCache();
         if (cachedTweets) {
           setTweets(cachedTweets.data || []);
           setLastUpdated(new Date(cachedTweets.timestamp));
@@ -181,22 +254,12 @@ export default function TwitterDashboard() {
     }
   };
 
-  // Handle account selection change
-  const handleAccountChange = (event) => {
-    const accountId = parseInt(event.target.value);
-    const account = accounts.find((acc) => acc.id === accountId);
-    setSelectedAccount(account);
-    if (account) {
-      loadTweets(account.id);
-    }
-  };
-
   // Handle tweet submission
   const handleTweetSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedAccount) {
-      toast.error("Please select a Twitter account");
+    if (!account) {
+      toast.error("No Twitter account connected");
       return;
     }
 
@@ -207,12 +270,18 @@ export default function TwitterDashboard() {
 
     setIsPosting(true);
     try {
-      await twitterService.postTweet(selectedAccount.id, tweetText);
+      await twitterService.postTweet(account.id, tweetText);
       toast.success("Tweet posted successfully!");
       setTweetText("");
 
       // Refresh the timeline
-      await loadTweets(selectedAccount.id, true);
+      await loadTweets(account.id, true);
+
+      // Update account stats
+      setAccountStats((prev) => ({
+        ...prev,
+        tweetsPosted: prev.tweetsPosted + 1,
+      }));
     } catch (error) {
       console.error("Error posting tweet:", error);
       toast.error("Failed to post tweet. Please try again.");
@@ -249,16 +318,9 @@ export default function TwitterDashboard() {
     <div className="space-y-6">
       <div className="pb-5 border-b border-gray-200 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Twitter Dashboard</h1>
-        <Link
-          href="/dashboard/twitter/analytics"
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <BarChart className="mr-2 h-4 w-4" />
-          View Analytics
-        </Link>
       </div>
 
-      {accounts.length === 0 ? (
+      {!account ? (
         <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
           <div className="text-center">
             <svg
@@ -270,7 +332,7 @@ export default function TwitterDashboard() {
               <path d="M22.162 5.656a8.384 8.384 0 0 1-2.402.658A4.196 4.196 0 0 0 21.6 4c-.82.488-1.719.83-2.656 1.015a4.182 4.182 0 0 0-7.126 3.814 11.874 11.874 0 0 1-8.62-4.37 4.168 4.168 0 0 0-.566 2.103c0 1.45.738 2.731 1.86 3.481a4.168 4.168 0 0 1-1.894-.523v.052a4.185 4.185 0 0 0 3.355 4.101 4.21 4.21 0 0 1-1.89.072A4.185 4.185 0 0 0 7.97 16.65a8.394 8.394 0 0 1-6.191 1.732 11.83 11.83 0 0 0 6.41 1.88c7.693 0 11.9-6.373 11.9-11.9 0-.18-.005-.362-.013-.54a8.496 8.496 0 0 0 2.087-2.165z" />
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No Twitter accounts connected
+              No Twitter account connected
             </h3>
             <p className="mt-1 text-sm text-gray-500">
               Connect your Twitter account to post tweets and view your
@@ -288,26 +350,54 @@ export default function TwitterDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Account selector */}
+          {/* Account Info Card */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-            <label
-              htmlFor="account-select"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Select Twitter Account
-            </label>
-            <select
-              id="account-select"
-              value={selectedAccount?.id || ""}
-              onChange={handleAccountChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              {accounts.map((account) => (
-                <option key={account.id} value={account.id}>
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-blue-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M22.162 5.656a8.384 8.384 0 0 1-2.402.658A4.196 4.196 0 0 0 21.6 4c-.82.488-1.719.83-2.656 1.015a4.182 4.182 0 0 0-7.126 3.814 11.874 11.874 0 0 1-8.62-4.37 4.168 4.168 0 0 0-.566 2.103c0 1.45.738 2.731 1.86 3.481a4.168 4.168 0 0 1-1.894-.523v.052a4.185 4.185 0 0 0 3.355 4.101 4.21 4.21 0 0 1-1.89.072A4.185 4.185 0 0 0 7.97 16.65a8.394 8.394 0 0 1-6.191 1.732 11.83 11.83 0 0 0 6.41 1.88c7.693 0 11.9-6.373 11.9-11.9 0-.18-.005-.362-.013-.54a8.496 8.496 0 0 0 2.087-2.165z" />
+                </svg>
+              </div>
+              <div className="ml-6">
+                <h2 className="text-xl font-semibold text-gray-900">
                   @{account.username}
-                </option>
-              ))}
-            </select>
+                </h2>
+                <div className="mt-3 flex space-x-6">
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-700">
+                      {accountStats.followers} Followers
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <MessageSquare className="h-5 w-5 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-700">
+                      {accountStats.tweetsPosted} Tweets
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-gray-500 mr-2" />
+                    <span className="text-sm text-gray-700">
+                      {accountStats.following} Following
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="ml-auto">
+                <Link
+                  href="/dashboard/twitter/connect"
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Update Account
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Post new tweet */}
@@ -352,6 +442,177 @@ export default function TwitterDashboard() {
             </form>
           </div>
 
+          {/* Analytics Overview */}
+          {account && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Analytics Overview
+                </h2>
+                <div>
+                  <label className="sr-only">Time Range</label>
+                  <div className="flex rounded-md shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleTimeRangeChange("7d")}
+                      className={`px-3 py-1 text-xs font-medium rounded-l-md ${
+                        timeRange === "7d"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      7 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTimeRangeChange("30d")}
+                      className={`px-3 py-1 text-xs font-medium ${
+                        timeRange === "30d"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      30 Days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTimeRangeChange("90d")}
+                      className={`px-3 py-1 text-xs font-medium rounded-r-md ${
+                        timeRange === "90d"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      90 Days
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* Followers Card */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Followers
+                  </h3>
+                  <p className="mt-2 text-xl font-bold text-blue-900">
+                    {analytics.summaryStats.currentFollowers}
+                  </p>
+                  <div
+                    className={`mt-2 flex items-center text-sm ${
+                      analytics.summaryStats.followerGrowth >= 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {analytics.summaryStats.followerGrowth >= 0 ? "+" : ""}
+                      {analytics.summaryStats.followerGrowth} (
+                      {analytics.summaryStats.followerGrowthPercent}%)
+                    </span>
+                    {analytics.summaryStats.followerGrowth >= 0 ? (
+                      <TrendingUp className="ml-1.5 h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="ml-1.5 h-4 w-4" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Likes Card */}
+                <div className="bg-pink-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-pink-800">Likes</h3>
+                  <p className="mt-2 text-xl font-bold text-pink-900">
+                    {analytics.summaryStats.currentLikes}
+                  </p>
+                  <div
+                    className={`mt-2 flex items-center text-sm ${
+                      analytics.summaryStats.likeGrowth >= 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {analytics.summaryStats.likeGrowth >= 0 ? "+" : ""}
+                      {analytics.summaryStats.likeGrowth} (
+                      {analytics.summaryStats.likeGrowthPercent}%)
+                    </span>
+                    {analytics.summaryStats.likeGrowth >= 0 ? (
+                      <TrendingUp className="ml-1.5 h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="ml-1.5 h-4 w-4" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Views Card */}
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-purple-800">Views</h3>
+                  <p className="mt-2 text-xl font-bold text-purple-900">
+                    {analytics.summaryStats.currentViews}
+                  </p>
+                  <div
+                    className={`mt-2 flex items-center text-sm ${
+                      analytics.summaryStats.viewGrowth >= 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    <span className="font-medium">
+                      {analytics.summaryStats.viewGrowth >= 0 ? "+" : ""}
+                      {analytics.summaryStats.viewGrowth} (
+                      {analytics.summaryStats.viewGrowthPercent}%)
+                    </span>
+                    {analytics.summaryStats.viewGrowth >= 0 ? (
+                      <TrendingUp className="ml-1.5 h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="ml-1.5 h-4 w-4" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Follower Growth Mini Chart */}
+              <div className="h-48 mb-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={analytics.followerData}
+                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="followers"
+                      stroke="#3b82f6"
+                      activeDot={{ r: 6 }}
+                      name="Followers"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="text-center">
+                <Link
+                  href="/dashboard/twitter/analytics"
+                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <BarChart className="mr-2 h-4 w-4" />
+                  View Detailed Analytics
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Timeline */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
@@ -365,7 +626,7 @@ export default function TwitterDashboard() {
                   </span>
                 )}
                 <button
-                  onClick={() => loadTweets(selectedAccount.id, true)}
+                  onClick={() => loadTweets(account.id, true)}
                   disabled={isLoading || refreshDisabled}
                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
