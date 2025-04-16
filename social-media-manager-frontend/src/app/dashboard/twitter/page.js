@@ -6,6 +6,7 @@ import Link from "next/link";
 import { twitterService } from "@/services/api";
 import toast from "react-hot-toast";
 import { BarChart } from "lucide-react";
+import AITextGenerator from "@/components/AiTextGenerator";
 
 // Helper function to manage local cache
 const getTweetCache = (accountId) => {
@@ -220,6 +221,11 @@ export default function TwitterDashboard() {
     }
   };
 
+  // Handle text generated from AI
+  const handleAIGenerated = (text) => {
+    setTweetText(text);
+  };
+
   // Format a tweet's created date
   const formatTweetDate = (dateString) => {
     if (!dateString) return "";
@@ -324,6 +330,12 @@ export default function TwitterDashboard() {
                   onChange={(e) => setTweetText(e.target.value)}
                   maxLength={280}
                 />
+                <div className="mt-1">
+                  <AITextGenerator
+                    onTextGenerated={handleAIGenerated}
+                    platform="twitter"
+                  />
+                </div>
               </div>
               <div className="mt-3 flex justify-between items-center">
                 <div className="text-sm text-gray-500">

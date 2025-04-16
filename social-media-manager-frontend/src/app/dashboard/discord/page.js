@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { discordService } from "@/services/api";
 import toast from "react-hot-toast";
+import AITextGenerator from "@/components/AiTextGenerator";
 
 export default function DiscordDashboard() {
   const [accounts, setAccounts] = useState([]);
@@ -127,6 +128,11 @@ export default function DiscordDashboard() {
     if (channel) {
       loadMessages(channel.id);
     }
+  };
+
+  // Handle AI-generated text
+  const handleAIGenerated = (text) => {
+    setNewMessage(text);
   };
 
   // Handle sending a new message
@@ -282,6 +288,42 @@ export default function DiscordDashboard() {
                 </select>
               )}
             </div>
+
+            {/* Refresh button */}
+            <div className="flex items-end">
+              <button
+                onClick={() =>
+                  selectedChannel && loadMessages(selectedChannel.id)
+                }
+                disabled={!selectedChannel || isLoadingMessages}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {isLoadingMessages ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-700"></div>
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Refresh
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Messages area */}
@@ -389,35 +431,47 @@ export default function DiscordDashboard() {
 
           {/* Message input */}
           <div className="p-4 border-t border-gray-200 bg-white">
-            <form onSubmit={handleSendMessage} className="flex">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={
-                  selectedChannel
-                    ? `Message #${selectedChannel.name}`
-                    : "Select a channel to send messages"
-                }
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                disabled={!selectedChannel || isSendingMessage}
-              />
-              <button
-                type="submit"
-                disabled={
-                  !selectedChannel || isSendingMessage || !newMessage.trim()
-                }
-                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                {isSendingMessage ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white"></div>
-                    Sending...
-                  </>
-                ) : (
-                  "Send"
-                )}
-              </button>
+            <form onSubmit={handleSendMessage} className="space-y-2">
+              <div className="flex">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={
+                    selectedChannel
+                      ? `Message #${selectedChannel.name}`
+                      : "Select a channel to send messages"
+                  }
+                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  disabled={!selectedChannel || isSendingMessage}
+                />
+                <button
+                  type="submit"
+                  disabled={
+                    !selectedChannel || isSendingMessage || !newMessage.trim()
+                  }
+                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                >
+                  {isSendingMessage ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white"></div>
+                      Sending...
+                    </>
+                  ) : (
+                    "Send"
+                  )}
+                </button>
+              </div>
+
+              {/* AI Text Generator */}
+              {selectedChannel && (
+                <div className="flex justify-start">
+                  <AITextGenerator
+                    onTextGenerated={handleAIGenerated}
+                    platform="discord"
+                  />
+                </div>
+              )}
             </form>
           </div>
         </div>

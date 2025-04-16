@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { telegramService, authService } from "@/services/api";
 import toast from "react-hot-toast";
+import AITextGenerator from "@/components/AiTextGenerator";
 
 export default function TelegramPage() {
   const router = useRouter();
@@ -114,6 +115,14 @@ export default function TelegramPage() {
   // Close message dialog
   const closeMessageDialog = () => {
     setShowMessageDialog(false);
+  };
+
+  // Handle AI-generated text
+  const handleAIGenerated = (text) => {
+    setMessageInfo((prev) => ({
+      ...prev,
+      message: text,
+    }));
   };
 
   // Send message
@@ -283,16 +292,27 @@ export default function TelegramPage() {
                 Find ID
               </button>
             </div>
-            <textarea
-              className="w-full border p-2 rounded mb-4"
-              rows="4"
-              placeholder="Enter your message"
-              value={messageInfo.message}
-              onChange={(e) =>
-                setMessageInfo({ ...messageInfo, message: e.target.value })
-              }
-              required
-            ></textarea>
+            <div className="mb-2">
+              <textarea
+                className="w-full border p-2 rounded"
+                rows="4"
+                placeholder="Enter your message"
+                value={messageInfo.message}
+                onChange={(e) =>
+                  setMessageInfo({ ...messageInfo, message: e.target.value })
+                }
+                required
+              ></textarea>
+
+              {/* Add AI Text Generator */}
+              <div className="mt-1 flex justify-start">
+                <AITextGenerator
+                  onTextGenerated={handleAIGenerated}
+                  platform="telegram"
+                />
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2">
               <button
                 className="px-4 py-2 border rounded"
