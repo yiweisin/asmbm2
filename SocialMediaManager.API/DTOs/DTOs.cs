@@ -18,7 +18,7 @@ namespace SocialMediaManager.API.DTOs
         [StringLength(100, MinimumLength = 6)]
         public string Password { get; set; }
         
-        public string AccountType { get; set; } = "basic"; // Default to basic if not specified
+        public string AccountType { get; set; } = "individual"; // Default to individual if not specified
     }
     
     public class LoginDTO
@@ -49,10 +49,20 @@ namespace SocialMediaManager.API.DTOs
         public string NewPassword { get; set; }
     }
     
-    public class UpdateAccountTypeDTO
+    // New DTO for creating subaccounts
+    public class CreateSubaccountDTO
     {
         [Required]
-        public string AccountType { get; set; }
+        [StringLength(50, MinimumLength = 3)]
+        public string Username { get; set; }
+        
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+        
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; }
     }
     
     // Response DTOs
@@ -68,11 +78,13 @@ namespace SocialMediaManager.API.DTOs
         public string Username { get; set; }
         public string Email { get; set; }
         public string AccountType { get; set; }
+        public int? ParentId { get; set; }
         public int TwitterAccountsCount { get; set; }
         public int DiscordAccountsCount { get; set; }
         public int TelegramAccountsCount { get; set; }
     }
     
+    // Other DTOs remain the same
     // Twitter DTOs
     public class TwitterConnectDTO
     {
@@ -85,7 +97,6 @@ namespace SocialMediaManager.API.DTOs
         [Required]
         public string CodeVerifier { get; set; }
     }
-    
     public class TwitterAccountDTO
     {
         public int Id { get; set; }

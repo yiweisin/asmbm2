@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const ProfileDetails = ({
-  user,
-  onSave,
-  accountTypes,
-  totalAccountsCount,
-  accountLimit,
-}) => {
+const ProfileDetails = ({ user, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -34,6 +28,20 @@ const ProfileDetails = ({
     const success = await onSave(formData);
     if (success) {
       setIsEditing(false);
+    }
+  };
+
+  // Helper to get account type display name
+  const getAccountTypeDisplay = (type) => {
+    switch (type) {
+      case "individual":
+        return "Individual";
+      case "admin":
+        return "Business Admin";
+      case "subaccount":
+        return "Business Subaccount";
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
 
@@ -122,8 +130,13 @@ const ProfileDetails = ({
                 <dt className="text-sm font-medium text-gray-500">
                   Account Type
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {accountTypes[user?.accountType || "basic"].title}
+                <dd className="mt-1 text-sm text-gray-900 flex items-center">
+                  {getAccountTypeDisplay(user?.accountType || "individual")}
+                  {user?.accountType === "subaccount" && (
+                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Managed Account
+                    </span>
+                  )}
                 </dd>
               </div>
               <div className="sm:col-span-1">
@@ -131,7 +144,10 @@ const ProfileDetails = ({
                   Connected Accounts
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  {totalAccountsCount} of {accountLimit}
+                  {(user?.twitterAccountsCount || 0) +
+                    (user?.discordAccountsCount || 0) +
+                    (user?.telegramAccountsCount || 0)}{" "}
+                  total
                 </dd>
               </div>
             </dl>

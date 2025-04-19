@@ -19,6 +19,13 @@ namespace SocialMediaManager.API.Data
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Configure User self-referencing relationship for subaccounts
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.Subaccounts)
+                .WithOne(u => u.Parent)
+                .HasForeignKey(u => u.ParentId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
             // Existing relationships
             modelBuilder.Entity<TwitterAccount>()
                 .HasMany(a => a.DailyMetrics)

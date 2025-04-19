@@ -12,7 +12,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    accountType: "basic", // Default to basic
+    accountType: "individual", // Default to individual
   });
   const [errors, setErrors] = useState({
     username: "",
@@ -28,36 +28,24 @@ export default function RegisterPage() {
 
   const accountTypes = [
     {
-      id: "basic",
-      title: "Basic",
-      description: "For influencers and content creators",
+      id: "individual",
+      title: "Individual",
+      description: "For personal use and individual creators",
       features: [
-        "Connect up to 3 social accounts",
-        "Basic scheduling",
+        "Manage your social media accounts",
+        "Schedule posts",
         "Analytics dashboard",
       ],
     },
     {
-      id: "business",
+      id: "admin",
       title: "Business",
-      description: "For small business owners",
+      description: "For businesses and agencies",
       features: [
-        "Connect up to 10 social accounts",
-        "Advanced scheduling",
-        "Detailed analytics",
-        "Content suggestions",
-      ],
-    },
-    {
-      id: "premium",
-      title: "Premium",
-      description: "For social media managers",
-      features: [
-        "Unlimited social accounts",
+        "All individual features",
+        "Create and manage subaccounts",
         "Team collaboration",
         "Advanced analytics",
-        "API access",
-        "Priority support",
       ],
     },
   ];

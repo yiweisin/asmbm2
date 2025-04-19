@@ -4,20 +4,29 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SocialMediaManager.API.Models
 {
-      public class User
+    public class User
     {
         public int Id { get; set; }
         public string Username { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
-        public string AccountType { get; set; } = "basic"; // Default value is "basic"
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? LastLoginAt { get; set; }
         
-        // Navigation properties
+        // Updated account type: individual, admin, or subaccount
+        public string AccountType { get; set; } = "individual";
+        
+        // Parent ID for subaccounts (null for individual and admin accounts)
+        public int? ParentId { get; set; }
+        
+        // Social media account collections
         public ICollection<TwitterAccount> TwitterAccounts { get; set; }
         public ICollection<DiscordAccount> DiscordAccounts { get; set; }
         public ICollection<TelegramAccount> TelegramAccounts { get; set; }
+        
+        // Navigation property - children (subaccounts) for admin accounts
+        public ICollection<User> Subaccounts { get; set; }
+        
+        // Navigation property - parent for subaccounts
+        public User Parent { get; set; }
     }
     
     public class TwitterAccount

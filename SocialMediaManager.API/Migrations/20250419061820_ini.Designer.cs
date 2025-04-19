@@ -11,8 +11,8 @@ using SocialMediaManager.API.Data;
 namespace SocialMediaManager.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250415143534_gg")]
-    partial class gg
+    [Migration("20250419061820_ini")]
+    partial class ini
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -67,7 +67,9 @@ namespace SocialMediaManager.API.Migrations
 
                     b.Property<string>("ErrorMessage")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("");
 
                     b.Property<string>("Platform")
                         .IsRequired()
@@ -89,7 +91,6 @@ namespace SocialMediaManager.API.Migrations
                         .HasDefaultValue("scheduled");
 
                     b.Property<string>("TargetId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("UserId")
@@ -212,15 +213,12 @@ namespace SocialMediaManager.API.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -231,6 +229,8 @@ namespace SocialMediaManager.API.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
 
                     b.ToTable("Users");
                 });
@@ -290,6 +290,16 @@ namespace SocialMediaManager.API.Migrations
                     b.Navigation("TwitterAccount");
                 });
 
+            modelBuilder.Entity("SocialMediaManager.API.Models.User", b =>
+                {
+                    b.HasOne("SocialMediaManager.API.Models.User", "Parent")
+                        .WithMany("Subaccounts")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("SocialMediaManager.API.Models.TwitterAccount", b =>
                 {
                     b.Navigation("DailyMetrics");
@@ -298,6 +308,8 @@ namespace SocialMediaManager.API.Migrations
             modelBuilder.Entity("SocialMediaManager.API.Models.User", b =>
                 {
                     b.Navigation("DiscordAccounts");
+
+                    b.Navigation("Subaccounts");
 
                     b.Navigation("TelegramAccounts");
 

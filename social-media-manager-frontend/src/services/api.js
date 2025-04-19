@@ -28,7 +28,7 @@ api.interceptors.request.use(
 // Authentication services
 export const authService = {
   // Register a new user
-  register: async (username, email, password, accountType = "basic") => {
+  register: async (username, email, password, accountType = "individual") => {
     try {
       const response = await api.post("/auth/register", {
         username,
@@ -149,12 +149,52 @@ export const authService = {
     }
   },
 
-  // Update account type (plan)
-  updateAccountType: async (accountType) => {
+  // Create a subaccount (for admin accounts only)
+  createSubaccount: async (username, email, password) => {
     try {
-      const response = await api.put("/auth/account-type", {
-        accountType,
+      const response = await api.post("/auth/create-subaccount", {
+        username,
+        email,
+        password,
       });
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data;
+      } else if (error.request) {
+        throw {
+          error:
+            "No response from server. Please check your internet connection.",
+        };
+      } else {
+        throw { error: error.message };
+      }
+    }
+  },
+
+  // Get subaccounts (for admin accounts only)
+  getSubaccounts: async () => {
+    try {
+      const response = await api.get("/auth/subaccounts");
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw error.response.data;
+      } else if (error.request) {
+        throw {
+          error:
+            "No response from server. Please check your internet connection.",
+        };
+      } else {
+        throw { error: error.message };
+      }
+    }
+  },
+
+  // Delete a subaccount (for admin accounts only)
+  deleteSubaccount: async (id) => {
+    try {
+      const response = await api.delete(`/auth/subaccounts/${id}`);
       return response.data;
     } catch (error) {
       if (error.response) {

@@ -9,9 +9,9 @@ import {
 } from "@/services/api";
 import toast from "react-hot-toast";
 import ProfileDetails from "@/components/ProfileDetails";
-import SubscriptionPlan from "@/components/SubscriptionPlan";
 import PasswordChange from "@/components/PasswordChange";
 import ConnectedPlatforms from "@/components/ConnectedPlatforms";
+import SubaccountManager from "@/components/SubaccountManager";
 
 export default function Profile() {
   const [accounts, setAccounts] = useState({
@@ -21,45 +21,6 @@ export default function Profile() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-
-  // Account plan configuration
-  const accountTypes = {
-    basic: {
-      title: "Basic",
-      description: "For influencers and content creators",
-      features: [
-        "Connect up to 3 social accounts",
-        "Basic scheduling",
-        "Analytics dashboard",
-      ],
-      limit: 3,
-    },
-    business: {
-      title: "Business",
-      description: "For small business owners",
-      features: [
-        "Connect up to 3 social accounts",
-        "Advanced scheduling",
-        "Detailed analytics",
-        "Auto-reply functionality",
-        "Content suggestions",
-      ],
-      limit: 3,
-    },
-    premium: {
-      title: "Premium",
-      description: "For social media managers",
-      features: [
-        "Unlimited social accounts",
-        "Team collaboration",
-        "Advanced analytics",
-        "Advanced auto-reply with AI",
-        "API access",
-        "Priority support",
-      ],
-      limit: "Unlimited",
-    },
-  };
 
   useEffect(() => {
     async function fetchData() {
@@ -113,7 +74,9 @@ export default function Profile() {
       if (success) {
         setAccounts((prev) => ({
           ...prev,
-          [service]: [],
+          [service]: prev[service].filter(
+            (account) => account.id !== accountId
+          ),
         }));
         toast.success(
           `${
@@ -150,34 +113,6 @@ export default function Profile() {
     }
   };
 
-  const upgradePlan = async (selectedPlan) => {
-    try {
-      const response = await authService.updateAccountType(selectedPlan);
-      setUser(response.user);
-      localStorage.setItem("user", JSON.stringify(response.user));
-      toast.success(
-        `Successfully upgraded to ${accountTypes[selectedPlan].title} plan`
-      );
-      return true;
-    } catch (error) {
-      toast.error(error.error || "Failed to upgrade plan");
-      return false;
-    }
-  };
-
-  const getTotalAccountsCount = () => {
-    return (
-      accounts.twitter.length +
-      accounts.discord.length +
-      accounts.telegram.length
-    );
-  };
-
-  const getAccountLimit = () => {
-    const currentType = user?.accountType || "basic";
-    return accountTypes[currentType].limit;
-  };
-
   return (
     <div>
       <div className="pb-5 border-b border-gray-200 mb-5">
@@ -190,29 +125,20 @@ export default function Profile() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Profile Details at the top as requested */}
-          <ProfileDetails
-            user={user}
-            onSave={saveProfileChanges}
-            accountTypes={accountTypes}
-            totalAccountsCount={getTotalAccountsCount()}
-            accountLimit={getAccountLimit()}
-          />
+          {/* Profile Details */}
+          <ProfileDetails user={user} onSave={saveProfileChanges} />
 
-          <SubscriptionPlan
-            user={user}
-            accountTypes={accountTypes}
-            onUpgrade={upgradePlan}
-            totalAccountsCount={getTotalAccountsCount()}
-            accountLimit={getAccountLimit()}
-          />
+          {/* Subaccount Manager (only for admin users) */}
+          {user?.accountType === "admin" && <SubaccountManager />}
 
-          <PasswordChange onChangePassword={changePassword} />
-
+          {/* Connected Platforms */}
           <ConnectedPlatforms
             accounts={accounts}
             onDisconnect={disconnectAccount}
           />
+
+          {/* Password Change */}
+          <PasswordChange onChangePassword={changePassword} />
         </div>
       )}
     </div>

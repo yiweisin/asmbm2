@@ -46,7 +46,8 @@ namespace SocialMediaManager.API.Controllers
                 Username = registerDto.Username,
                 Email = registerDto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                AccountType = registerDto.AccountType ?? "basic" // Default to basic if null
+                AccountType = registerDto.AccountType ?? "individual", // Default to individual if null
+                ParentId = null // No parent for new regular accounts
             };
             
             _context.Users.Add(user);
@@ -61,6 +62,7 @@ namespace SocialMediaManager.API.Controllers
                     Username = user.Username,
                     Email = user.Email,
                     AccountType = user.AccountType,
+                    ParentId = user.ParentId,
                     TwitterAccountsCount = 0,
                     DiscordAccountsCount = 0,
                     TelegramAccountsCount = 0
@@ -94,6 +96,7 @@ namespace SocialMediaManager.API.Controllers
                     Username = user.Username,
                     Email = user.Email,
                     AccountType = user.AccountType,
+                    ParentId = user.ParentId,
                     TwitterAccountsCount = user.TwitterAccounts?.Count ?? 0,
                     DiscordAccountsCount = user.DiscordAccounts?.Count ?? 0,
                     TelegramAccountsCount = user.TelegramAccounts?.Count ?? 0
@@ -145,6 +148,7 @@ namespace SocialMediaManager.API.Controllers
                     Username = user.Username,
                     Email = user.Email,
                     AccountType = user.AccountType,
+                    ParentId = user.ParentId,
                     TwitterAccountsCount = user.TwitterAccounts?.Count ?? 0,
                     DiscordAccountsCount = user.DiscordAccounts?.Count ?? 0,
                     TelegramAccountsCount = user.TelegramAccounts?.Count ?? 0
@@ -175,93 +179,132 @@ namespace SocialMediaManager.API.Controllers
 
             return Ok(new { message = "Password changed successfully" });
         }
-
+        
         [Authorize]
-        [HttpPut("account-type")]
-        public async Task<ActionResult<AuthResponseDTO>> UpdateAccountType(UpdateAccountTypeDTO updateAccountTypeDto)
+        [HttpPost("create-subaccount")]
+        public async Task<ActionResult<AuthResponseDTO>> CreateSubaccount(CreateSubaccountDTO createSubaccountDto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
-
-            var user = await _context.Users
-                .Include(u => u.TwitterAccounts)
-                .Include(u => u.DiscordAccounts)
-                .Include(u => u.TelegramAccounts)
-                .SingleOrDefaultAsync(x => x.Id == int.Parse(userId));
-
-            if (user == null)
+            
+            var currentUser = await _context.Users.FindAsync(int.Parse(userId));
+            if (currentUser == null)
                 return NotFound("User not found");
-
-            // Validate account type
-            if (!IsValidAccountType(updateAccountTypeDto.AccountType))
-                return BadRequest("Invalid account type");
-
-            // Check if user can downgrade (would they exceed their account limit?)
-            if (IsDowngrade(user.AccountType, updateAccountTypeDto.AccountType))
-            {
-                int accountLimit = GetAccountLimit(updateAccountTypeDto.AccountType);
-                int currentAccountsCount = (user.TwitterAccounts?.Count ?? 0) + 
-                                          (user.DiscordAccounts?.Count ?? 0) + 
-                                          (user.TelegramAccounts?.Count ?? 0);
+            
+            // Validate that only admins can create subaccounts
+            if (currentUser.AccountType != "admin")
+                return BadRequest("Only admin accounts can create subaccounts");
                 
-                if (accountLimit != -1 && currentAccountsCount > accountLimit) // -1 means unlimited
-                {
-                    return BadRequest($"Cannot downgrade. You have {currentAccountsCount} connected accounts, but the {updateAccountTypeDto.AccountType} plan only allows {accountLimit}.");
-                }
-            }
-
-            // Update account type
-            user.AccountType = updateAccountTypeDto.AccountType;
+            // Check if username is already taken
+            if (await _context.Users.AnyAsync(x => x.Username == createSubaccountDto.Username))
+                return BadRequest("Username is already taken");
+                
+            // Check if email is already in use
+            if (await _context.Users.AnyAsync(x => x.Email == createSubaccountDto.Email))
+                return BadRequest("Email is already in use");
+            
+            // Create the subaccount
+            var subaccount = new User
+            {
+                Username = createSubaccountDto.Username,
+                Email = createSubaccountDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(createSubaccountDto.Password),
+                AccountType = "subaccount",
+                ParentId = currentUser.Id
+            };
+            
+            _context.Users.Add(subaccount);
             await _context.SaveChangesAsync();
-
+            
             return new AuthResponseDTO
             {
-                Token = _tokenService.CreateToken(user),
+                Token = _tokenService.CreateToken(subaccount),
                 User = new UserDTO
                 {
-                    Id = user.Id,
-                    Username = user.Username,
-                    Email = user.Email,
-                    AccountType = user.AccountType,
-                    TwitterAccountsCount = user.TwitterAccounts?.Count ?? 0,
-                    DiscordAccountsCount = user.DiscordAccounts?.Count ?? 0,
-                    TelegramAccountsCount = user.TelegramAccounts?.Count ?? 0
+                    Id = subaccount.Id,
+                    Username = subaccount.Username,
+                    Email = subaccount.Email,
+                    AccountType = subaccount.AccountType,
+                    ParentId = subaccount.ParentId,
+                    TwitterAccountsCount = 0,
+                    DiscordAccountsCount = 0,
+                    TelegramAccountsCount = 0
                 }
             };
+        }
+        
+        [Authorize]
+        [HttpGet("subaccounts")]
+        public async Task<ActionResult<List<UserDTO>>> GetSubaccounts()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            
+            var currentUser = await _context.Users.FindAsync(int.Parse(userId));
+            if (currentUser == null)
+                return NotFound("User not found");
+            
+            // Validate that only admins can view subaccounts
+            if (currentUser.AccountType != "admin")
+                return BadRequest("Only admin accounts can view subaccounts");
+            
+            // Get all subaccounts for this admin
+            var subaccounts = await _context.Users
+                .Where(u => u.ParentId == currentUser.Id)
+                .Select(u => new UserDTO
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    AccountType = u.AccountType,
+                    ParentId = u.ParentId,
+                    TwitterAccountsCount = u.TwitterAccounts.Count,
+                    DiscordAccountsCount = u.DiscordAccounts.Count,
+                    TelegramAccountsCount = u.TelegramAccounts.Count
+                })
+                .ToListAsync();
+                
+            return subaccounts;
+        }
+        
+        [Authorize]
+        [HttpDelete("subaccounts/{id}")]
+        public async Task<ActionResult> DeleteSubaccount(int id)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            
+            var currentUser = await _context.Users.FindAsync(int.Parse(userId));
+            if (currentUser == null)
+                return NotFound("User not found");
+            
+            // Validate that only admins can delete subaccounts
+            if (currentUser.AccountType != "admin")
+                return BadRequest("Only admin accounts can delete subaccounts");
+            
+            // Get the subaccount
+            var subaccount = await _context.Users.FindAsync(id);
+            if (subaccount == null)
+                return NotFound("Subaccount not found");
+            
+            // Ensure this is actually a subaccount of the current user
+            if (subaccount.ParentId != currentUser.Id || subaccount.AccountType != "subaccount")
+                return BadRequest("This account is not a subaccount under your management");
+            
+            // Delete the subaccount
+            _context.Users.Remove(subaccount);
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { message = "Subaccount deleted successfully" });
         }
 
         // Helper methods
         private bool IsValidAccountType(string accountType)
         {
-            return accountType == "basic" || accountType == "business" || accountType == "premium";
-        }
-
-        private bool IsDowngrade(string currentType, string newType)
-        {
-            var hierarchy = new Dictionary<string, int>
-            {
-                { "basic", 1 },
-                { "business", 2 },
-                { "premium", 3 }
-            };
-
-            return hierarchy[newType] < hierarchy[currentType];
-        }
-
-        private int GetAccountLimit(string accountType)
-        {
-            switch (accountType)
-            {
-                case "basic":
-                    return 3;
-                case "business":
-                    return 10;
-                case "premium":
-                    return -1; // Unlimited
-                default:
-                    return 3;
-            }
+            return accountType == "individual" || accountType == "admin" || accountType == "subaccount";
         }
     }
 }

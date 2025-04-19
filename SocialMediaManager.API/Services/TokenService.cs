@@ -24,8 +24,15 @@ namespace SocialMediaManager.API.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Email, user.Email)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("AccountType", user.AccountType)
             };
+            
+            // Add ParentId claim for subaccounts
+            if (user.ParentId.HasValue)
+            {
+                claims.Add(new Claim("ParentId", user.ParentId.Value.ToString()));
+            }
             
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["TokenKey"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
