@@ -131,11 +131,13 @@ export default function Profile() {
           {/* Subaccount Manager (only for admin users) */}
           {user?.accountType === "admin" && <SubaccountManager />}
 
-          {/* Connected Platforms */}
-          <ConnectedPlatforms
-            accounts={accounts}
-            onDisconnect={disconnectAccount}
-          />
+          {/* Connected Platforms - hidden for subaccount users */}
+          {user?.accountType !== "subaccount" && (
+            <ConnectedPlatforms
+              accounts={accounts}
+              onDisconnect={disconnectAccount}
+            />
+          )}
 
           {/* Password Change */}
           <PasswordChange onChangePassword={changePassword} />

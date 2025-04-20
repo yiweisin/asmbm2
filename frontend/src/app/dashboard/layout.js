@@ -151,9 +151,6 @@ export default function DashboardLayout({ children }) {
                 </Link>
               )}
 
-              {/* Divider */}
-              <div className="border-t border-gray-200 my-4"></div>
-
               {/* Platforms heading - Only for Admins and Individual users */}
               {!isSubaccount && (
                 <>
@@ -247,43 +244,6 @@ export default function DashboardLayout({ children }) {
                   </Link>
                 </>
               )}
-
-              {/* Divider */}
-              <div className="border-t border-gray-200 my-4"></div>
-
-              {/* Settings heading */}
-              <div className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Settings
-              </div>
-
-              <Link
-                href="/dashboard/profile"
-                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md ${
-                  isActive("/dashboard/profile")
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <svg
-                  className={`mr-3 h-5 w-5 ${
-                    isActive("/dashboard/profile")
-                      ? "text-blue-500"
-                      : "text-gray-500"
-                  }`}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                Profile
-              </Link>
             </div>
           </nav>
 
