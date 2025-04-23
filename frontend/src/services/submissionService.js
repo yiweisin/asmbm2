@@ -25,10 +25,21 @@ export const submissionService = {
     }
   },
 
-  // Create a new submission (for subaccounts)
+  // Create a new submission (for subaccounts) - simplified to only require platform and content
   createSubmission: async (submissionData) => {
     try {
-      const response = await api.post("/submission", submissionData);
+      // Make sure we always have at least the required fields
+      const minimalData = {
+        platform: submissionData.platform,
+        content: submissionData.content,
+        // Other fields are optional
+        ...(submissionData.targetId && { targetId: submissionData.targetId }),
+        ...(submissionData.scheduledTime && {
+          scheduledTime: submissionData.scheduledTime,
+        }),
+      };
+
+      const response = await api.post("/submission", minimalData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

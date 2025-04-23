@@ -15,10 +15,10 @@ export default function SubmissionsPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // For subaccount submission form
+  // For subaccount submission form - maintain targetId in the state for compatibility
   const [newSubmission, setNewSubmission] = useState({
     platform: "twitter",
-    targetId: "",
+    targetId: "", // Keep this for compatibility
     content: "",
     scheduledTime: getTomorrowDateTime(),
   });
@@ -90,7 +90,7 @@ export default function SubmissionsPage() {
     setNewSubmission((prev) => ({
       ...prev,
       platform: platform,
-      targetId: "", // Reset target
+      targetId: platform === "twitter" ? "" : "placeholder", // Set placeholder for Discord/Telegram
     }));
   };
 
@@ -147,27 +147,28 @@ export default function SubmissionsPage() {
     e.preventDefault();
 
     try {
-      // Validate required fields
-      if (
-        (newSubmission.platform === "discord" ||
-          newSubmission.platform === "telegram") &&
-        !newSubmission.targetId
-      ) {
-        toast.error(
-          newSubmission.platform === "discord"
-            ? "Please enter a channel ID"
-            : "Please enter a chat ID"
-        );
-        return;
-      }
-
       if (!newSubmission.content) {
         toast.error("Please enter content for your post");
         return;
       }
 
-      // Only set scheduled time if provided
+      // Prepare the submission data
       const submissionData = { ...newSubmission };
+
+      // For Twitter, ensure targetId is an empty string, not undefined
+      if (submissionData.platform === "twitter") {
+        submissionData.targetId = "";
+      }
+
+      // For Discord/Telegram, ensure there's a placeholder value
+      if (
+        submissionData.platform === "discord" ||
+        submissionData.platform === "telegram"
+      ) {
+        submissionData.targetId = "placeholder";
+      }
+
+      // Only set scheduled time if provided
       if (!submissionData.scheduledTime) {
         delete submissionData.scheduledTime;
       }
@@ -278,15 +279,7 @@ export default function SubmissionsPage() {
                       <div className="font-medium">
                         {getPlatformName(submission.platform)}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {submission.platform === "discord" &&
-                        submission.targetId
-                          ? `Channel ID: ${submission.targetId}`
-                          : submission.platform === "telegram" &&
-                            submission.targetId
-                          ? `Chat ID: ${submission.targetId}`
-                          : ""}
-                      </div>
+                      {/* Don't show targetId even if present and not a placeholder */}
                     </div>
                   </div>
                   <span
@@ -324,7 +317,7 @@ export default function SubmissionsPage() {
           </div>
         )}
 
-        {/* Create Submission Modal */}
+        {/* Create Submission Modal - Simplified to remove targetId input fields */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg max-w-lg w-full mx-4 overflow-hidden">
@@ -349,47 +342,15 @@ export default function SubmissionsPage() {
                       <option value="discord">Discord</option>
                       <option value="telegram">Telegram</option>
                     </select>
+                    {(newSubmission.platform === "discord" ||
+                      newSubmission.platform === "telegram") && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {newSubmission.platform === "discord"
+                          ? "Your admin will select which Discord channel to post to during review."
+                          : "Your admin will select which Telegram chat to post to during review."}
+                      </p>
+                    )}
                   </div>
-
-                  {/* Discord-specific fields */}
-                  {newSubmission.platform === "discord" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Channel ID
-                        <span className="text-xs text-gray-400 ml-1">
-                          (Enter the Discord channel ID)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        name="targetId"
-                        value={newSubmission.targetId}
-                        onChange={handleInputChange}
-                        placeholder="e.g. 123456789012345678"
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  )}
-
-                  {/* Telegram-specific fields */}
-                  {newSubmission.platform === "telegram" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Chat ID
-                        <span className="text-xs text-gray-400 ml-1">
-                          (User or group chat ID)
-                        </span>
-                      </label>
-                      <input
-                        type="text"
-                        name="targetId"
-                        value={newSubmission.targetId}
-                        onChange={handleInputChange}
-                        placeholder="e.g. 123456789"
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  )}
 
                   {/* Content */}
                   <div>
@@ -527,15 +488,17 @@ export default function SubmissionsPage() {
                       <div className="font-medium">
                         {getPlatformName(submission.platform)}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {submission.platform === "discord" &&
-                        submission.targetId
-                          ? `Channel ID: ${submission.targetId}`
-                          : submission.platform === "telegram" &&
-                            submission.targetId
-                          ? `Chat ID: ${submission.targetId}`
-                          : ""}
-                      </div>
+                      {/* Only show targetId for admin view if it's not a placeholder */}
+                      {submission.targetId &&
+                        submission.targetId !== "placeholder" &&
+                        (submission.platform === "discord" ||
+                          submission.platform === "telegram") && (
+                          <div className="text-sm text-gray-500">
+                            {submission.platform === "discord"
+                              ? `Channel ID: ${submission.targetId}`
+                              : `Chat ID: ${submission.targetId}`}
+                          </div>
+                        )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">

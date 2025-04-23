@@ -250,18 +250,18 @@ namespace SocialMediaManager.API.DTOs
         public DateTime ScheduledTime { get; set; }
     }
     public class CreateSubmissionDTO
-    {
-        [Required]
-        public string Platform { get; set; }
-        
-        public string TargetId { get; set; } // Required for Discord channel ID and Telegram chat ID
-        
-        [Required]
-        [StringLength(2000)] // Max content length
-        public string Content { get; set; }
-        
-        public DateTime? ScheduledTime { get; set; } // Optional scheduling time
-    }
+{
+    [Required]
+    public string Platform { get; set; }
+    
+    public string TargetId { get; set; } // Now optional for all platforms
+    
+    [Required]
+    [StringLength(2000)] // Max content length
+    public string Content { get; set; }
+    
+    public DateTime? ScheduledTime { get; set; } // Optional scheduling time
+}
     
     // DTO for returning submission data - simplified
     public class SubmissionDTO

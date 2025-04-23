@@ -33,6 +33,11 @@ export default function SubmissionDetail({ params }) {
   const [platformAccounts, setPlatformAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
 
+  // For channel/chat selection (when platform is Discord or Telegram)
+  const [showTargetSelection, setShowTargetSelection] = useState(false);
+  const [targetId, setTargetId] = useState("");
+  const [targetOptions, setTargetOptions] = useState([]);
+
   // Check if user is logged in and load submission
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -135,6 +140,12 @@ export default function SubmissionDetail({ params }) {
         postImmediately: postImmediately,
         platformAccountId: parseInt(selectedAccountId),
       };
+
+      // If target ID is specified (for Discord/Telegram), include it
+      if (targetId) {
+        // This would set the targetId on the scheduled post, overriding any value from the submission
+        reviewData.targetId = targetId;
+      }
 
       // Only include scheduled time if not posting immediately
       if (!postImmediately && scheduledTime) {
@@ -299,16 +310,9 @@ export default function SubmissionDetail({ params }) {
                 ></i>
                 <div>
                   <h2 className="text-xl font-semibold">
-                    {submission.platformAccountName || submission.platform}
+                    {submission.platform.charAt(0).toUpperCase() +
+                      submission.platform.slice(1)}
                   </h2>
-                  {submission.targetId && (
-                    <p className="text-gray-600">
-                      {submission.platform === "discord"
-                        ? "Channel: "
-                        : "Chat ID: "}
-                      {submission.targetName || submission.targetId}
-                    </p>
-                  )}
                 </div>
               </div>
               <span
@@ -410,16 +414,9 @@ export default function SubmissionDetail({ params }) {
               ></i>
               <div>
                 <h2 className="text-xl font-semibold">
-                  {submission.platformAccountName || submission.platform}
+                  {submission.platform.charAt(0).toUpperCase() +
+                    submission.platform.slice(1)}
                 </h2>
-                {submission.targetId && (
-                  <p className="text-gray-600">
-                    {submission.platform === "discord"
-                      ? "Channel: "
-                      : "Chat ID: "}
-                    {submission.targetName || submission.targetId}
-                  </p>
-                )}
               </div>
             </div>
             <span
@@ -571,6 +568,34 @@ export default function SubmissionDetail({ params }) {
                 </select>
               )}
             </div>
+
+            {/* For Discord or Telegram, show target selection field (optional) */}
+            {(submission.platform === "discord" ||
+              submission.platform === "telegram") && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {submission.platform === "discord"
+                    ? "Channel ID (Optional)"
+                    : "Chat ID (Optional)"}
+                </label>
+                <input
+                  type="text"
+                  value={targetId}
+                  onChange={(e) => setTargetId(e.target.value)}
+                  placeholder={
+                    submission.platform === "discord"
+                      ? "Discord channel ID"
+                      : "Telegram chat ID"
+                  }
+                  className="w-full border border-gray-300 rounded-md p-2"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {submission.platform === "discord"
+                    ? "Enter a Discord channel ID where the bot should post"
+                    : "Enter a Telegram chat ID where the bot should post"}
+                </p>
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="flex items-center">

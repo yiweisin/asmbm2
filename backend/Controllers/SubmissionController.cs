@@ -126,7 +126,7 @@ namespace SocialMediaManager.API.Controllers
             return Ok(result);
         }
         
-        // Create a new submission (for subaccounts) - simplified
+        // Create a new submission (for subaccounts) - simplified, without requiring targetId
         [HttpPost]
         public async Task<IActionResult> CreateSubmission([FromBody] CreateSubmissionDTO dto)
         {
@@ -162,7 +162,7 @@ namespace SocialMediaManager.API.Controllers
                 return BadRequest("Invalid platform. Must be 'twitter', 'discord', or 'telegram'.");
             }
             
-            // Create submission
+            // Create submission - targetId is now optional for all platforms
             var submission = new PostSubmission
             {
                 SubmitterUserId = userId,
@@ -325,7 +325,7 @@ namespace SocialMediaManager.API.Controllers
                         UserId = submission.AdminUserId, // Post as the admin
                         Platform = submission.Platform,
                         PlatformAccountId = dto.PlatformAccountId.Value,
-                        TargetId = submission.TargetId,
+                        TargetId = submission.TargetId, // Use the TargetId from submission (even if empty)
                         Content = submission.Content,
                         ScheduledTime = DateTime.UtcNow, // Schedule for immediate posting
                         Status = "scheduled"
@@ -359,7 +359,7 @@ namespace SocialMediaManager.API.Controllers
                         UserId = submission.AdminUserId, // Post as the admin
                         Platform = submission.Platform,
                         PlatformAccountId = dto.PlatformAccountId.Value,
-                        TargetId = submission.TargetId,
+                        TargetId = submission.TargetId, // Use the TargetId from submission (even if empty)
                         Content = submission.Content,
                         ScheduledTime = scheduledTime,
                         Status = "scheduled"
