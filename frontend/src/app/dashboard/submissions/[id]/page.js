@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  submissionService,
-  authService,
-  twitterService,
-  discordService,
-  telegramService,
-} from "@/services/api";
+import { submissionService, authService, twitterService } from "@/services/api";
 import toast from "react-hot-toast";
 import { use } from "react";
 
@@ -21,22 +15,15 @@ export default function SubmissionDetail({ params }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-
-  // For admin review
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [postImmediately, setPostImmediately] = useState(false);
   const [scheduledTime, setScheduledTime] = useState("");
-
-  // For platform account selection
   const [platformAccounts, setPlatformAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
-
-  // For channel/chat selection (when platform is Discord or Telegram)
-  const [showTargetSelection, setShowTargetSelection] = useState(false);
   const [targetId, setTargetId] = useState("");
-  const [targetOptions, setTargetOptions] = useState([]);
+  const [account, setAccount] = useState(null);
 
   // Check if user is logged in and load submission
   useEffect(() => {
@@ -89,70 +76,47 @@ export default function SubmissionDetail({ params }) {
     }
   };
 
-  // Load available platform accounts for the admin
-  const loadPlatformAccounts = async (platform) => {
-    try {
-      let accounts = [];
-      const adminId = currentUser.id;
+  // Load Twitter account
+  useEffect(() => {
+    async function loadAccount() {
+      try {
+        const data = await twitterService.getAccounts();
 
-      switch (platform) {
-        case "twitter":
-          accounts = await twitterService.getAdminAccounts(adminId);
-          break;
-        case "discord":
-          accounts = await discordService.getAdminAccounts(adminId);
-          break;
-        case "telegram":
-          accounts = await telegramService.getAdminAccounts(adminId);
-          break;
-        default:
-          accounts = [];
+        // Take the first account or null if none exists
+        if (data.length > 0) {
+          setAccount(data[0]);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Error loading Twitter account:", error);
+        toast.error("Failed to load Twitter account");
+        setIsLoading(false);
       }
-
-      setPlatformAccounts(accounts);
-      if (accounts.length > 0) {
-        setSelectedAccountId(accounts[0].id.toString());
-      }
-    } catch (error) {
-      console.error(`Failed to load ${platform} accounts:`, error);
-      toast.error(`Failed to load ${platform} accounts`);
     }
-  };
 
-  // Handle approving a submission
+    loadAccount();
+  }, []);
+
   const handleApproveSubmission = async () => {
     try {
       setIsProcessing(true);
 
-      // Check if submission exists and has an ID before proceeding
-      if (!submission || !submission.id) {
-        throw new Error("Invalid submission data");
+      // First, review the submission
+      try {
+        await submissionService.reviewSubmission(submission.id, {
+          action: "approve",
+        });
+      } catch (error) {
+        toast.error("approval failed");
       }
 
-      // Check if a platform account is selected
-      if (!selectedAccountId) {
-        throw new Error("Please select an account to post from");
+      // If it's a Twitter submission and an account exists
+      if (account && submission.platform === "twitter") {
+        await twitterService.postTweet(account.id, submission.content);
+        toast.success("Tweet posted successfully!");
       }
 
-      // Prepare review data
-      const reviewData = {
-        action: "approve",
-        postImmediately: postImmediately,
-        platformAccountId: parseInt(selectedAccountId),
-      };
-
-      // If target ID is specified (for Discord/Telegram), include it
-      if (targetId) {
-        // This would set the targetId on the scheduled post, overriding any value from the submission
-        reviewData.targetId = targetId;
-      }
-
-      // Only include scheduled time if not posting immediately
-      if (!postImmediately && scheduledTime) {
-        reviewData.scheduledTime = new Date(scheduledTime).toISOString();
-      }
-
-      await submissionService.reviewSubmission(submission.id, reviewData);
       toast.success("Submission approved successfully!");
       router.push("/dashboard/submissions");
     } catch (error) {
@@ -467,7 +431,7 @@ export default function SubmissionDetail({ params }) {
                 Reject
               </button>
               <button
-                onClick={() => setShowApproveModal(true)}
+                onClick={handleApproveSubmission}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 disabled={isProcessing}
               >
@@ -529,118 +493,6 @@ export default function SubmissionDetail({ params }) {
                 disabled={isProcessing || !rejectionReason.trim()}
               >
                 {isProcessing ? "Rejecting..." : "Reject Submission"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Approve Modal */}
-      {showApproveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-medium mb-4">Approve Submission</h3>
-
-            {/* Select Platform Account */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Account to Post From
-              </label>
-              {platformAccounts.length === 0 ? (
-                <div className="text-red-500 text-sm">
-                  No {submission?.platform} accounts found. Please connect an
-                  account first.
-                </div>
-              ) : (
-                <select
-                  value={selectedAccountId}
-                  onChange={(e) => setSelectedAccountId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2 mb-4"
-                  disabled={isProcessing}
-                >
-                  {platformAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.displayName ||
-                        account.username ||
-                        `Account ${account.id}`}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* For Discord or Telegram, show target selection field (optional) */}
-            {(submission.platform === "discord" ||
-              submission.platform === "telegram") && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {submission.platform === "discord"
-                    ? "Channel ID (Optional)"
-                    : "Chat ID (Optional)"}
-                </label>
-                <input
-                  type="text"
-                  value={targetId}
-                  onChange={(e) => setTargetId(e.target.value)}
-                  placeholder={
-                    submission.platform === "discord"
-                      ? "Discord channel ID"
-                      : "Telegram chat ID"
-                  }
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {submission.platform === "discord"
-                    ? "Enter a Discord channel ID where the bot should post"
-                    : "Enter a Telegram chat ID where the bot should post"}
-                </p>
-              </div>
-            )}
-
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={postImmediately}
-                  onChange={(e) => setPostImmediately(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-gray-700">Post immediately</span>
-              </label>
-            </div>
-
-            {!postImmediately && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Schedule for
-                </label>
-                <input
-                  type="datetime-local"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                />
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowApproveModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
-                disabled={isProcessing}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApproveSubmission}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                disabled={
-                  isProcessing ||
-                  (!postImmediately && !scheduledTime) ||
-                  platformAccounts.length === 0
-                }
-              >
-                {isProcessing ? "Approving..." : "Approve"}
               </button>
             </div>
           </div>

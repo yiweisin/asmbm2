@@ -10,11 +10,22 @@ import {
 } from "@/services/api";
 import toast from "react-hot-toast";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
+import SchedulePostModal from "@/components/SchedulePostModal";
 
 export default function DashboardOverview() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+
+  // State for SchedulePostModal
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null); // State for the selected post
+
+  // Function to open and close the modal
+  const toggleScheduleModal = (post = null) => {
+    setSelectedPost(post); // Set the selected post
+    setIsScheduleModalOpen(!isScheduleModalOpen);
+  };
 
   // For admin and individual users
   const [todayPosts, setTodayPosts] = useState([]);
@@ -67,14 +78,15 @@ export default function DashboardOverview() {
         return isToday(postDate);
       });
 
-      // Filter for yesterday's completed posts
-      const yesterday = completedData.filter((post) => {
+      // Filter for posts from yesterday until now
+      const now = new Date();
+      const yesterdayUntilNow = completedData.filter((post) => {
         const postDate = parseISO(post.postedTime);
-        return isYesterday(postDate);
+        return isYesterday(postDate) || postDate <= now;
       });
 
       setTodayPosts(today);
-      setYesterdayPosts(yesterday);
+      setYesterdayPosts(yesterdayUntilNow);
     } catch (error) {
       console.error("Failed to load scheduled posts:", error);
       toast.error("Failed to load scheduled posts");
@@ -451,13 +463,23 @@ export default function DashboardOverview() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-          <Link
-            href="/dashboard/schedule"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            View All Scheduled Posts
-          </Link>
+          <div className="flex space-x-4">
+            <Link
+              href="/dashboard/schedule"
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              View All Scheduled Posts
+            </Link>
+          </div>
         </div>
+
+        {/* Render the SchedulePostModal */}
+        {isScheduleModalOpen && (
+          <SchedulePostModal
+            post={selectedPost} // Pass the selected post to the modal
+            onClose={() => toggleScheduleModal()} // Close the modal
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Today's Schedule */}
@@ -478,65 +500,36 @@ export default function DashboardOverview() {
                 </div>
               ) : todayPosts.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 mx-auto mb-2 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="mb-1">No posts scheduled for today</p>
-                  <Link
-                    href="/dashboard/schedule"
-                    className="text-blue-500 hover:text-blue-700 font-medium"
-                  >
-                    Schedule a post
-                  </Link>
+                  <p>No posts scheduled for today</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                  {todayPosts
-                    .sort(
-                      (a, b) =>
-                        new Date(a.scheduledTime) - new Date(b.scheduledTime)
-                    )
-                    .map((post) => (
-                      <div key={post.id} className="p-4 hover:bg-gray-50">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center">
-                            <i
-                              className={`${getPlatformIcon(
-                                post.platform
-                              )} text-lg mr-2`}
-                            ></i>
-                            <span className="font-medium">
-                              {getPlatformName(post.platform)}
-                            </span>
-                          </div>
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                            {formatDateTime(post.scheduledTime)}
+                  {todayPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-4 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => toggleScheduleModal(post)} // Open modal with the selected post
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <i
+                            className={`${getPlatformIcon(
+                              post.platform
+                            )} text-lg mr-2`}
+                          ></i>
+                          <span className="font-medium">
+                            {getPlatformName(post.platform)}
                           </span>
                         </div>
-                        <p className="text-gray-700 text-sm">
-                          {truncateText(post.content)}
-                        </p>
-                        <div className="mt-2 flex justify-end">
-                          <Link
-                            href={`/dashboard/schedule?edit=${post.id}`}
-                            className="text-xs text-blue-600 hover:text-blue-800"
-                          >
-                            View Details
-                          </Link>
-                        </div>
+                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          {formatDateTime(post.scheduledTime)}
+                        </span>
                       </div>
-                    ))}
+                      <p className="text-gray-700 text-sm">
+                        {truncateText(post.content)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -544,9 +537,15 @@ export default function DashboardOverview() {
 
           {/* Yesterday's Completed Posts */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 py-3">
+            <div
+              className={`px-4 py-3 ${
+                yesterdayPosts.length === 0
+                  ? "bg-gradient-to-r from-red-500 to-red-600"
+                  : "bg-gradient-to-r from-green-500 to-green-600"
+              }`}
+            >
               <h2 className="text-white text-lg font-medium">
-                Yesterday's Completed Posts
+                Posts from Yesterday Until Now
               </h2>
               <p className="text-green-100 text-sm">
                 {format(new Date(Date.now() - 86400000), "EEEE, MMMM d, yyyy")}
@@ -560,21 +559,7 @@ export default function DashboardOverview() {
                 </div>
               ) : yesterdayPosts.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 mx-auto mb-2 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
-                  <p>No posts were completed yesterday</p>
+                  <p>No posts were completed recently</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">

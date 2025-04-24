@@ -290,10 +290,6 @@ namespace SocialMediaManager.API.DTOs
         
         public string RejectionReason { get; set; } // Required if action is "reject"
         
-        public int? PlatformAccountId { get; set; } // Required if action is "approve"
-        
-        public bool PostImmediately { get; set; } = false; // If true, post immediately instead of scheduling
-        
         public DateTime? ScheduledTime { get; set; } // Can override the original scheduled time
     }
     

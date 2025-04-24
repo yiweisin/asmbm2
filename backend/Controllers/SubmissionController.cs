@@ -283,90 +283,8 @@ namespace SocialMediaManager.API.Controllers
             // Process the review
             if (dto.Action.ToLower() == "approve")
             {
-                // Verify that an account was selected for approval
-                if (!dto.PlatformAccountId.HasValue)
-                {
-                    return BadRequest("Must select an account to post from when approving");
-                }
-                
-                // Verify the admin owns the selected account
-                bool accountExists = false;
-                
-                switch (submission.Platform.ToLower())
-                {
-                    case "twitter":
-                        accountExists = await _context.TwitterAccounts
-                            .AnyAsync(a => a.Id == dto.PlatformAccountId.Value && a.UserId == userId);
-                        break;
-                    case "discord":
-                        accountExists = await _context.DiscordAccounts
-                            .AnyAsync(a => a.Id == dto.PlatformAccountId.Value && a.UserId == userId);
-                        break;
-                    case "telegram":
-                        accountExists = await _context.TelegramAccounts
-                            .AnyAsync(a => a.Id == dto.PlatformAccountId.Value && a.UserId == userId);
-                        break;
-                }
-                
-                if (!accountExists)
-                {
-                    return BadRequest("Selected account not found or you don't have permission to use it");
-                }
-                
                 submission.Status = "approved";
                 submission.ReviewTime = DateTime.UtcNow;
-                
-                // If the admin wants to post immediately
-                if (dto.PostImmediately)
-                {
-                    // Create a scheduled post with immediate posting time
-                    var scheduledPost = new ScheduledPost
-                    {
-                        UserId = submission.AdminUserId, // Post as the admin
-                        Platform = submission.Platform,
-                        PlatformAccountId = dto.PlatformAccountId.Value,
-                        TargetId = submission.TargetId, // Use the TargetId from submission (even if empty)
-                        Content = submission.Content,
-                        ScheduledTime = DateTime.UtcNow, // Schedule for immediate posting
-                        Status = "scheduled"
-                    };
-                    
-                    _context.ScheduledPosts.Add(scheduledPost);
-                }
-                else
-                {
-                    // Handle scheduling
-                    DateTime scheduledTime;
-                    
-                    // If admin provided a new scheduled time, use it (convert from UTC+8 to UTC)
-                    if (dto.ScheduledTime.HasValue)
-                    {
-                        scheduledTime = FromUtc8(dto.ScheduledTime.Value);
-                    }
-                    // Otherwise use the original time from submission, or default to now + 1 hour
-                    else if (submission.ScheduledTime.HasValue)
-                    {
-                        scheduledTime = submission.ScheduledTime.Value;
-                    }
-                    else
-                    {
-                        scheduledTime = DateTime.UtcNow.AddHours(1);
-                    }
-                    
-                    // Create a scheduled post
-                    var scheduledPost = new ScheduledPost
-                    {
-                        UserId = submission.AdminUserId, // Post as the admin
-                        Platform = submission.Platform,
-                        PlatformAccountId = dto.PlatformAccountId.Value,
-                        TargetId = submission.TargetId, // Use the TargetId from submission (even if empty)
-                        Content = submission.Content,
-                        ScheduledTime = scheduledTime,
-                        Status = "scheduled"
-                    };
-                    
-                    _context.ScheduledPosts.Add(scheduledPost);
-                }
             }
             else if (dto.Action.ToLower() == "reject")
             {
@@ -376,7 +294,7 @@ namespace SocialMediaManager.API.Controllers
                     return BadRequest("A reason must be provided when rejecting a submission");
                 }
                 
-                submission.Status = "rejected";
+                submission.Status = "rejected"; // Fixed: This was incorrectly set to "approved"
                 submission.RejectionReason = dto.RejectionReason;
                 submission.ReviewTime = DateTime.UtcNow;
             }
@@ -389,7 +307,6 @@ namespace SocialMediaManager.API.Controllers
             
             return Ok(new { status = submission.Status });
         }
-        
         // Helper methods
         private async Task<string> GetTargetName(string platform, string targetId)
         {

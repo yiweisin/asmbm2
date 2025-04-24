@@ -114,8 +114,7 @@ namespace SocialMediaManager.API.Models
         
         [Required]
         public string Platform { get; set; } // "twitter", "discord", or "telegram"
-        
-        // Removed PlatformAccountId - will be selected by admin during approval
+
         
         public string TargetId { get; set; } // Channel ID for Discord, Chat ID for Telegram, null for Twitter
         
