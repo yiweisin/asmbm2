@@ -16,18 +16,7 @@ import {
   Calendar,
 } from "lucide-react";
 import AITextGenerator from "@/components/AiTextGenerator";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from "recharts";
+import TwitterAnalytics from "@/components/TwitterAnalytics";
 
 // Optimized cache management
 const CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes
@@ -61,7 +50,7 @@ const setTweetCache = (data) => {
   }
 };
 
-export default function SimplifiedTwitterDashboard() {
+export default function TwitterDashboard() {
   const [account, setAccount] = useState(null);
   const [tweets, setTweets] = useState([]);
   const [topTweets, setTopTweets] = useState({ views: [], likes: [] });
@@ -93,7 +82,6 @@ export default function SimplifiedTwitterDashboard() {
   });
   const [timeRange, setTimeRange] = useState("30d");
   const [activeTab, setActiveTab] = useState("top-views");
-  const [engagementTrend, setEngagementTrend] = useState([]);
 
   // Load Twitter account
   useEffect(() => {
@@ -149,44 +137,9 @@ export default function SimplifiedTwitterDashboard() {
       });
 
       setAnalytics(analyticsData);
-
-      // Generate engagement trend data
-      generateEngagementTrend(timeRange);
     } catch (error) {
       console.error("Error loading account analytics:", error);
     }
-  };
-
-  // Generate engagement trend data
-  const generateEngagementTrend = (range) => {
-    const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
-    const data = [];
-    const baseValue = {
-      likes: Math.floor(Math.random() * 200) + 50,
-      retweets: Math.floor(Math.random() * 100) + 20,
-      replies: Math.floor(Math.random() * 80) + 10,
-    };
-
-    const today = new Date();
-
-    for (let i = days; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dayVariation = Math.random() * 0.3 - 0.15; // -15% to +15%
-
-      data.push({
-        date: date.toISOString().split("T")[0],
-        likes: Math.floor(baseValue.likes * (1 + dayVariation * (i / days))),
-        retweets: Math.floor(
-          baseValue.retweets * (1 + dayVariation * (i / days))
-        ),
-        replies: Math.floor(
-          baseValue.replies * (1 + dayVariation * (i / days))
-        ),
-      });
-    }
-
-    setEngagementTrend(data);
   };
 
   // Handle time range change
@@ -426,252 +379,23 @@ export default function SimplifiedTwitterDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Account Summary */}
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="h-12 w-12 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                  <span className="text-xl font-bold">
-                    {account.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="ml-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    @{account.username}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="flex space-x-8">
-                <div className="flex flex-col items-center">
-                  <div className="text-xl font-semibold text-gray-900">
-                    {accountStats.followers}
-                  </div>
-                  <div className="text-sm text-gray-600">Followers</div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-xl font-semibold text-gray-900">
-                    {accountStats.tweetsPosted}
-                  </div>
-                  <div className="text-sm text-gray-600">Tweets</div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-xl font-semibold text-gray-900">
-                    {Math.round(
-                      (analytics.summaryStats.currentLikes /
-                        Math.max(analytics.summaryStats.currentViews, 1)) *
-                        1000
-                    ) / 10}
-                    %
-                  </div>
-                  <div className="text-sm text-gray-600">Engagement Rate</div>
-                </div>
-              </div>
-
-              <div>
-                <Link
-                  href="/dashboard/twitter/connect"
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Manage Account
-                </Link>
-              </div>
-            </div>
-
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Audience Growth */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Users className="h-6 w-6 text-blue-500 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Audience Growth
-                      </p>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {analytics.summaryStats.followerGrowthPercent}%
-                      </h3>
-                    </div>
-                  </div>
-                  <div
-                    className={`flex items-center px-2 py-1 rounded-full text-sm ${
-                      analytics.summaryStats.followerGrowth >= 0
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {analytics.summaryStats.followerGrowth >= 0 ? (
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                    )}
-                    <span>
-                      {analytics.summaryStats.followerGrowth >= 0 ? "+" : ""}
-                      {analytics.summaryStats.followerGrowth}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Engagement Rate */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Heart className="h-6 w-6 text-pink-500 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Engagement Rate
-                      </p>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {Math.round(
-                          (analytics.summaryStats.currentLikes /
-                            Math.max(analytics.summaryStats.currentViews, 1)) *
-                            1000
-                        ) / 10}
-                        %
-                      </h3>
-                    </div>
-                  </div>
-                  <div
-                    className={`flex items-center px-2 py-1 rounded-full text-sm ${
-                      analytics.summaryStats.likeGrowth >= 0
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {analytics.summaryStats.likeGrowth >= 0 ? (
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                    )}
-                    <span>{analytics.summaryStats.likeGrowthPercent}%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Impressions */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Eye className="h-6 w-6 text-purple-500 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Impressions
-                      </p>
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {analytics.summaryStats.currentViews.toLocaleString()}
-                      </h3>
-                    </div>
-                  </div>
-                  <div
-                    className={`flex items-center px-2 py-1 rounded-full text-sm ${
-                      analytics.summaryStats.viewGrowth >= 0
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {analytics.summaryStats.viewGrowth >= 0 ? (
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                    )}
-                    <span>{analytics.summaryStats.viewGrowthPercent}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Analytics Component */}
+          <TwitterAnalytics
+            accountData={{
+              username: account.username,
+              tweetsPosted: accountStats.tweetsPosted,
+            }}
+            analyticsData={analytics}
+            timeRange={timeRange}
+            onTimeRangeChange={handleTimeRangeChange}
+          />
 
           {/* Main Dashboard Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Performance Chart */}
-            <div className="lg:col-span-2">
-              <div className="bg-white shadow-sm rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-medium text-gray-900">
-                    Performance Trends
-                  </h2>
-                  <div className="inline-flex rounded-md shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => handleTimeRangeChange("7d")}
-                      className={`px-3 py-1 text-sm font-medium rounded-l-md ${
-                        timeRange === "7d"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      Week
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTimeRangeChange("30d")}
-                      className={`px-3 py-1 text-sm font-medium ${
-                        timeRange === "30d"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      Month
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTimeRangeChange("90d")}
-                      className={`px-3 py-1 text-sm font-medium rounded-r-md ${
-                        timeRange === "90d"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      Quarter
-                    </button>
-                  </div>
-                </div>
-
-                {/* Engagement Chart */}
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={engagementTrend}
-                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }}
-                      />
-                      <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="likes"
-                        stroke="#ec4899"
-                        activeDot={{ r: 8 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="retweets"
-                        stroke="#10b981"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="replies"
-                        stroke="#f59e0b"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
+            {/* Performance Chart - Removed as it's now in the TwitterAnalytics component */}
 
             {/* Post new tweet */}
-            <div className="bg-white shadow-sm rounded-lg p-6">
+            <div className="bg-white shadow-sm rounded-lg p-6 lg:col-span-3">
               <h2 className="text-lg font-medium text-gray-900 mb-4">
                 Post a Tweet
               </h2>

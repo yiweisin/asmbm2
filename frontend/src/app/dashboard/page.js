@@ -7,10 +7,12 @@ import {
   scheduleService,
   authService,
   submissionService,
+  twitterService,
 } from "@/services/api";
 import toast from "react-hot-toast";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import SchedulePostModal from "@/components/SchedulePostModal";
+import TwitterAnalytics from "@/components/TwitterAnalytics";
 
 export default function DashboardOverview() {
   const router = useRouter();
@@ -20,12 +22,6 @@ export default function DashboardOverview() {
   // State for SchedulePostModal
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null); // State for the selected post
-
-  // Function to open and close the modal
-  const toggleScheduleModal = (post = null) => {
-    setSelectedPost(post); // Set the selected post
-    setIsScheduleModalOpen(!isScheduleModalOpen);
-  };
 
   // For admin and individual users
   const [todayPosts, setTodayPosts] = useState([]);
@@ -39,6 +35,36 @@ export default function DashboardOverview() {
   const [recentRejectedSubmissions, setRecentRejectedSubmissions] = useState(
     []
   );
+
+  // Twitter Analytics state
+  const [twitterAccount, setTwitterAccount] = useState(null);
+  const [twitterAnalytics, setTwitterAnalytics] = useState({
+    followerData: [],
+    engagementData: [],
+    summaryStats: {
+      currentFollowers: 0,
+      followerGrowth: 0,
+      followerGrowthPercent: 0,
+      currentLikes: 0,
+      likeGrowth: 0,
+      likeGrowthPercent: 0,
+      currentViews: 0,
+      viewGrowth: 0,
+      viewGrowthPercent: 0,
+    },
+  });
+  const [twitterAccountStats, setTwitterAccountStats] = useState({
+    followers: 0,
+    following: 0,
+    tweetsPosted: 0,
+  });
+  const [timeRange, setTimeRange] = useState("30d");
+
+  // Function to open and close the modal
+  const toggleScheduleModal = (post = null) => {
+    setSelectedPost(post); // Set the selected post
+    setIsScheduleModalOpen(!isScheduleModalOpen);
+  };
 
   useEffect(() => {
     if (!authService.isLoggedIn()) {
@@ -56,8 +82,63 @@ export default function DashboardOverview() {
     } else {
       // For admins and individual users
       loadScheduledPosts();
+      loadTwitterAccount();
     }
   }, [router]);
+
+  // Load Twitter account and analytics
+  const loadTwitterAccount = async () => {
+    try {
+      const accounts = await twitterService.getAccounts();
+      if (accounts.length > 0) {
+        setTwitterAccount(accounts[0]);
+        loadTwitterAnalytics(accounts[0].id);
+      }
+    } catch (error) {
+      console.error("Failed to load Twitter account:", error);
+      // Don't show error toast as Twitter might not be connected
+    }
+  };
+
+  // Load Twitter analytics
+  const loadTwitterAnalytics = async (accountId) => {
+    try {
+      const analyticsData = await twitterService.getAnalytics(
+        accountId,
+        timeRange
+      );
+      setTwitterAnalytics(analyticsData);
+
+      setTwitterAccountStats({
+        followers: analyticsData.summaryStats.currentFollowers || 0,
+        following: 0,
+        tweetsPosted: 0, // Will be updated when we get tweets
+      });
+
+      // Optionally load tweets to get tweet count
+      try {
+        const tweetsData = await twitterService.getTimeline(accountId);
+        if (tweetsData && tweetsData.data) {
+          setTwitterAccountStats((prev) => ({
+            ...prev,
+            tweetsPosted: tweetsData.data.length || 0,
+          }));
+        }
+      } catch (tweetError) {
+        console.error("Failed to load tweets:", tweetError);
+      }
+    } catch (error) {
+      console.error("Failed to load Twitter analytics:", error);
+    }
+  };
+
+  // Handle time range change
+  const handleTimeRangeChange = (range) => {
+    setTimeRange(range);
+    if (twitterAccount) {
+      loadTwitterAnalytics(twitterAccount.id);
+    }
+  };
 
   // Load scheduled posts for today and completed posts for yesterday (for admins and individuals)
   const loadScheduledPosts = async () => {
@@ -594,6 +675,44 @@ export default function DashboardOverview() {
             </div>
           </div>
         </div>
+        <div className="mb-8"></div>
+        {/* Twitter Analytics Component */}
+        {twitterAccount && (
+          <div className="mb-6">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-white text-lg font-medium">
+                      Twitter Analytics
+                    </h2>
+                    <p className="text-blue-100 text-sm">
+                      Performance metrics for your Twitter account
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard/twitter"
+                    className="px-3 py-1 bg-white text-blue-600 rounded text-sm font-medium hover:bg-blue-50"
+                  >
+                    Full Dashboard
+                  </Link>
+                </div>
+              </div>
+
+              <div className="p-4">
+                <TwitterAnalytics
+                  accountData={{
+                    username: twitterAccount.username,
+                    tweetsPosted: twitterAccountStats.tweetsPosted,
+                  }}
+                  analyticsData={twitterAnalytics}
+                  timeRange={timeRange}
+                  onTimeRangeChange={handleTimeRangeChange}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats Section for admin - show recent submissions */}
         {currentUser?.accountType === "admin" && (

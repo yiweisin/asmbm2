@@ -20,7 +20,7 @@ export default function SubmissionsPage() {
     platform: "twitter",
     targetId: "", // Keep this for compatibility
     content: "",
-    scheduledTime: getTomorrowDateTime(),
+    scheduledTime: getTomorrowDateTimeUTC8(),
   });
 
   // Check if user is logged in and determine account type
@@ -57,10 +57,17 @@ export default function SubmissionsPage() {
   };
 
   // Get tomorrow's date at current time
-  function getTomorrowDateTime() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return formatDateTimeForInput(tomorrow);
+  function getTomorrowDateTimeUTC8() {
+    const now = new Date();
+    const utc8OffsetMs = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+
+    // Convert current time to UTC+8
+    const utc8Now = new Date(now.getTime() + utc8OffsetMs);
+
+    // Add one day
+    utc8Now.setDate(utc8Now.getDate() + 1);
+
+    return formatDateTimeForInput(utc8Now);
   }
 
   // Format date for datetime-local input
@@ -68,20 +75,29 @@ export default function SubmissionsPage() {
     return date.toISOString().slice(0, 16); // Format: "YYYY-MM-DDTHH:MM"
   }
 
-  // Format date for display
+  // Format date for display - correctly handling UTC+8 times from backend
   const formatDate = (dateString) => {
     try {
+      if (!dateString) return "N/A";
+
+      // Parse the date string into a Date object
       const date = new Date(dateString);
-      return date.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      });
+
+      // Format the date using the browser's locale settings
+      // The backend is already providing dates in UTC+8, so we don't need to adjust
+      return (
+        date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          hour12: true,
+        }) + " (UTC+8)"
+      );
     } catch (error) {
-      return dateString;
+      console.error("Date formatting error:", error);
+      return dateString || "N/A";
     }
   };
 
@@ -183,7 +199,7 @@ export default function SubmissionsPage() {
         platform: "twitter",
         targetId: "",
         content: "",
-        scheduledTime: getTomorrowDateTime(),
+        scheduledTime: getTomorrowDateTimeUTC8(),
       });
     } catch (error) {
       console.error("Failed to create submission:", error);
@@ -312,6 +328,16 @@ export default function SubmissionsPage() {
                       </div>
                     )}
                 </div>
+
+                {/* Add View Details button for subaccounts */}
+                <div className="mt-4 flex justify-end space-x-2">
+                  <Link
+                    href={`/dashboard/submissions/${submission.id}`}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -395,6 +421,9 @@ export default function SubmissionsPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Your admin will have final approval of posting time.
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      All times are in UTC+8 timezone.
                     </p>
                   </div>
                 </div>
@@ -537,16 +566,24 @@ export default function SubmissionsPage() {
                     )}
                 </div>
 
-                {submission.status === "pending" && (
-                  <div className="mt-4 flex justify-end space-x-2">
+                {/* For admins, we show different buttons based on status */}
+                <div className="mt-4 flex justify-end space-x-2">
+                  {submission.status === "pending" ? (
                     <Link
                       href={`/dashboard/submissions/${submission.id}`}
                       className="px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
                       Review
                     </Link>
-                  </div>
-                )}
+                  ) : (
+                    <Link
+                      href={`/dashboard/submissions/${submission.id}`}
+                      className="px-3 py-1.5 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      View Details
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -22,20 +22,6 @@ export default function TelegramConnectPage() {
           router.push("/login");
           return;
         }
-
-        // Get current user details
-        const currentUser = authService.getCurrentUser();
-        const isPremiumUser = currentUser?.accountType === "premium";
-
-        // Get existing accounts
-        const accounts = await telegramService.getAccounts();
-
-        // If user already has a bot and is not premium, redirect to profile page
-        if (accounts.length > 0 && !isPremiumUser) {
-          toast.error("Upgrade to Premium to connect multiple Telegram bots");
-          router.push("/dashboard/profile");
-          return;
-        }
       } catch (error) {
         console.error("Error checking eligibility:", error);
       } finally {

@@ -13,8 +13,7 @@ export default function TelegramPage() {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // Message Dialog state
-  const [showMessageDialog, setShowMessageDialog] = useState(false);
+  // Message state
   const [messageInfo, setMessageInfo] = useState({
     accountId: null,
     chatId: "",
@@ -48,6 +47,21 @@ export default function TelegramPage() {
       setLoading(true);
       const data = await telegramService.getAccounts();
       setAccounts(data);
+
+      // If user has no accounts, redirect to connect page
+      if (data.length === 0) {
+        router.push("/dashboard/telegram/connect");
+        return;
+      }
+
+      // Automatically select the first account
+      if (data.length > 0) {
+        setMessageInfo((prev) => ({
+          ...prev,
+          accountId: data[0].id,
+        }));
+      }
+
       setError(null);
     } catch (err) {
       setError("Failed to load Telegram accounts: " + (err.error || err));
@@ -55,26 +69,6 @@ export default function TelegramPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Check if user is premium
-  const isPremiumUser = () => {
-    return currentUser?.accountType === "premium";
-  };
-
-  // Check if user can add more bots
-  const canAddMoreBots = () => {
-    // Only premium users can add more bots
-    if (isPremiumUser()) {
-      return true;
-    }
-    // Non-premium users can add a bot if they don't have any
-    return accounts.length === 0;
-  };
-
-  // Navigate to connect page
-  const handleAddBot = () => {
-    router.push("/dashboard/telegram/connect");
   };
 
   // Delete Telegram account
@@ -102,21 +96,6 @@ export default function TelegramPage() {
     setShowConfirmDialog(false);
   };
 
-  // Open message dialog
-  const openMessageDialog = (accountId) => {
-    setMessageInfo({
-      accountId,
-      chatId: "",
-      message: "",
-    });
-    setShowMessageDialog(true);
-  };
-
-  // Close message dialog
-  const closeMessageDialog = () => {
-    setShowMessageDialog(false);
-  };
-
   // Handle AI-generated text
   const handleAIGenerated = (text) => {
     setMessageInfo((prev) => ({
@@ -135,8 +114,20 @@ export default function TelegramPage() {
     }
 
     try {
-      await telegramService.sendMessage(accountId, chatId, message);
-      closeMessageDialog();
+      // Always use the first account's ID
+      const activeAccountId = accounts[0]?.id;
+
+      if (!activeAccountId) {
+        toast.error("No Telegram bot available");
+        return;
+      }
+
+      await telegramService.sendMessage(activeAccountId, chatId, message);
+      // Clear just the message, keep the chat ID
+      setMessageInfo((prev) => ({
+        ...prev,
+        message: "",
+      }));
       toast.success("Message sent successfully!");
     } catch (err) {
       toast.error("Failed to send message: " + (err.error || err));
@@ -171,63 +162,25 @@ export default function TelegramPage() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-xl font-semibold">Your Bots</h2>
-        {canAddMoreBots() && (
-          <button
-            className="px-3 py-1 bg-blue-500 text-white rounded"
-            onClick={handleAddBot}
-          >
-            Connect New Bot
-          </button>
-        )}
       </div>
 
-      {!isPremiumUser() && accounts.length > 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex">
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Upgrade to Premium to connect multiple Telegram bots.
-              </p>
-              <p className="mt-2">
-                <button
-                  className="text-sm text-yellow-700 underline"
-                  onClick={() => router.push("/dashboard/profile")}
-                >
-                  Upgrade now
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {accounts.length === 0 ? (
-        <p className="text-gray-600">
-          You don't have any Telegram bots connected yet.
-        </p>
-      ) : (
-        accounts.map((account) => (
-          <div key={account.id} className="bg-white p-4 rounded shadow mb-3">
+      {/* Bot Info */}
+      <div className="mb-6">
+        {accounts.length > 0 && (
+          <div className="bg-white p-4 rounded shadow mb-3">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-semibold">@{account.username}</h3>
+                <h3 className="font-semibold">@{accounts[0].username}</h3>
                 <p className="text-gray-600 text-sm">
-                  ID: {account.telegramId}
+                  ID: {accounts[0].telegramId}
                 </p>
               </div>
               <div>
                 <button
-                  className="text-blue-500 mr-2"
-                  onClick={() => openMessageDialog(account.id)}
-                  title="Send Message"
-                >
-                  Send
-                </button>
-                <button
                   className="text-red-500"
-                  onClick={() => openConfirmDialog(account)}
+                  onClick={() => openConfirmDialog(accounts[0])}
                   title="Delete Account"
                 >
                   Delete
@@ -235,8 +188,69 @@ export default function TelegramPage() {
               </div>
             </div>
           </div>
-        ))
-      )}
+        )}
+      </div>
+
+      {/* Message Box */}
+      <div className="bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-bold mb-4">Send Message</h2>
+        <div className="mb-4">
+          {accounts.length > 0 && (
+            <p className="text-sm text-gray-600 mb-1">
+              Sending as: @{accounts[0].username}
+            </p>
+          )}
+
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              className="flex-1 border p-2 rounded"
+              placeholder="Chat ID"
+              value={messageInfo.chatId}
+              onChange={(e) =>
+                setMessageInfo({ ...messageInfo, chatId: e.target.value })
+              }
+              required
+            />
+            <button
+              className="px-3 py-1 border rounded"
+              onClick={openChatIdHelper}
+            >
+              Find ID
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <textarea
+              className="w-full border p-2 rounded"
+              rows="4"
+              placeholder="Enter your message"
+              value={messageInfo.message}
+              onChange={(e) =>
+                setMessageInfo({ ...messageInfo, message: e.target.value })
+              }
+              required
+            ></textarea>
+
+            {/* Add AI Text Generator */}
+            <div className="mt-1 flex justify-start">
+              <AITextGenerator
+                onTextGenerated={handleAIGenerated}
+                platform="telegram"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              className="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded flex items-center"
+              onClick={handleSendMessage}
+            >
+              <span className="mr-1">→</span> Send
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
@@ -262,69 +276,6 @@ export default function TelegramPage() {
                 }}
               >
                 Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Message Dialog */}
-      {showMessageDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Send Telegram Message</h2>
-
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                className="flex-1 border p-2 rounded"
-                placeholder="Chat ID"
-                value={messageInfo.chatId}
-                onChange={(e) =>
-                  setMessageInfo({ ...messageInfo, chatId: e.target.value })
-                }
-                required
-              />
-              <button
-                className="px-3 py-1 border rounded"
-                onClick={openChatIdHelper}
-              >
-                Find ID
-              </button>
-            </div>
-            <div className="mb-2">
-              <textarea
-                className="w-full border p-2 rounded"
-                rows="4"
-                placeholder="Enter your message"
-                value={messageInfo.message}
-                onChange={(e) =>
-                  setMessageInfo({ ...messageInfo, message: e.target.value })
-                }
-                required
-              ></textarea>
-
-              {/* Add AI Text Generator */}
-              <div className="mt-1 flex justify-start">
-                <AITextGenerator
-                  onTextGenerated={handleAIGenerated}
-                  platform="telegram"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 border rounded"
-                onClick={closeMessageDialog}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded flex items-center"
-                onClick={handleSendMessage}
-              >
-                <span className="mr-1">→</span> Send
               </button>
             </div>
           </div>

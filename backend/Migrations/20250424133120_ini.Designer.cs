@@ -11,8 +11,8 @@ using SocialMediaManager.API.Data;
 namespace SocialMediaManager.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250419220032_cc")]
-    partial class cc
+    [Migration("20250424133120_ini")]
+    partial class ini
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

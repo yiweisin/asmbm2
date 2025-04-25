@@ -110,11 +110,12 @@ namespace SocialMediaManager.API.Controllers
                     Content = submission.Content,
                     Status = submission.Status,
                     RejectionReason = submission.RejectionReason,
-                    SubmissionTime = submission.SubmissionTime,
-                    ReviewTime = submission.ReviewTime
+                    // Convert all date times to UTC+8
+                    SubmissionTime = ToUtc8(submission.SubmissionTime),
+                    ReviewTime = submission.ReviewTime.HasValue ? ToUtc8(submission.ReviewTime.Value) : (DateTime?)null
                 };
                 
-                // Convert UTC times to UTC+8 for display
+                // Convert scheduled time if it exists
                 if (submission.ScheduledTime.HasValue)
                 {
                     dto.ScheduledTime = ToUtc8(submission.ScheduledTime.Value);
@@ -231,11 +232,12 @@ namespace SocialMediaManager.API.Controllers
                 Content = submission.Content,
                 Status = submission.Status,
                 RejectionReason = submission.RejectionReason,
-                SubmissionTime = submission.SubmissionTime,
-                ReviewTime = submission.ReviewTime
+                // Convert all date times to UTC+8
+                SubmissionTime = ToUtc8(submission.SubmissionTime),
+                ReviewTime = submission.ReviewTime.HasValue ? ToUtc8(submission.ReviewTime.Value) : (DateTime?)null
             };
             
-            // Convert UTC times to UTC+8 for display
+            // Convert scheduled time if it exists
             if (submission.ScheduledTime.HasValue)
             {
                 dto.ScheduledTime = ToUtc8(submission.ScheduledTime.Value);
@@ -281,26 +283,18 @@ namespace SocialMediaManager.API.Controllers
             }
             
             // Process the review
-            if (dto.Action.ToLower() == "approve")
+            if (dto.Action.ToLower() == "reject")
             {
-                submission.Status = "approved";
-                submission.ReviewTime = DateTime.UtcNow;
-            }
-            else if (dto.Action.ToLower() == "reject")
-            {
-                // Check for rejection reason
-                if (string.IsNullOrWhiteSpace(dto.RejectionReason))
-                {
-                    return BadRequest("A reason must be provided when rejecting a submission");
-                }
                 
-                submission.Status = "rejected"; // Fixed: This was incorrectly set to "approved"
+                submission.Status = "rejected";
                 submission.RejectionReason = dto.RejectionReason;
                 submission.ReviewTime = DateTime.UtcNow;
             }
             else
             {
-                return BadRequest("Invalid action. Must be 'approve' or 'reject'.");
+                submission.Status = "approved";
+                submission.RejectionReason = "NA";
+                submission.ReviewTime = DateTime.UtcNow;
             }
             
             await _context.SaveChangesAsync();

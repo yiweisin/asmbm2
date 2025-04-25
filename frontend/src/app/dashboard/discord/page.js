@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { discordService } from "@/services/api";
 import toast from "react-hot-toast";
 import AITextGenerator from "@/components/AiTextGenerator";
