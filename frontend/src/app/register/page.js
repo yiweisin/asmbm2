@@ -31,6 +31,22 @@ export default function RegisterPage() {
       id: "individual",
       title: "Individual",
       description: "For personal use and individual creators",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      ),
       features: [
         "Manage your social media accounts",
         "Schedule posts",
@@ -41,11 +57,26 @@ export default function RegisterPage() {
       id: "admin",
       title: "Business",
       description: "For businesses and agencies",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-8 w-8 text-indigo-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+      ),
       features: [
         "All individual features",
         "Create and manage subaccounts",
         "Team collaboration",
-        "Advanced analytics",
       ],
     },
   ];
@@ -146,29 +177,59 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create a new account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
-            <Link
-              href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-gradient-to-br from-purple-300/20 to-indigo-300/20 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-gradient-to-tr from-blue-300/20 to-cyan-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-2/3 right-1/2 w-96 h-96 bg-gradient-to-br from-pink-300/20 to-purple-300/20 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+      </div>
+
+      <div className="max-w-3xl w-full z-10 space-y-8">
+        <div className="text-center">
+          {/* Logo */}
+          <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg mb-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-10 w-10 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              sign in to your existing account
-            </Link>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              />
+            </svg>
+          </div>
+
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+            Create Your Account
+          </h2>
+          <p className="mt-3 text-center text-gray-600">
+            Sign up today to start managing your social media presence
           </p>
+          <div className="flex justify-center mt-2">
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                Sign in here →
+              </Link>
+            </p>
+          </div>
         </div>
 
-        {success && (
-          <div className="rounded-md bg-green-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
+        <div className="bg-white py-8 px-10 shadow-xl rounded-2xl border border-gray-100 backdrop-blur-sm bg-white/80">
+          {success && (
+            <div className="rounded-xl bg-emerald-50 p-5 mb-6 border border-emerald-100 flex items-start">
+              <div className="flex-shrink-0 bg-emerald-100 rounded-full p-2">
                 <svg
-                  className="h-5 w-5 text-green-400"
+                  className="h-6 w-6 text-emerald-600"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -182,25 +243,23 @@ export default function RegisterPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">
+                <h3 className="text-lg font-medium text-emerald-800">
                   Registration successful!
                 </h3>
-                <div className="mt-2 text-sm text-green-700">
+                <div className="mt-2 text-sm text-emerald-700">
                   <p>
                     Your account has been created. Redirecting to login page...
                   </p>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {errors.general && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
+          {errors.general && (
+            <div className="rounded-xl bg-rose-50 p-5 mb-6 border border-rose-100 flex items-start">
+              <div className="flex-shrink-0 bg-rose-100 rounded-full p-2">
                 <svg
-                  className="h-5 w-5 text-red-400"
+                  className="h-6 w-6 text-rose-600"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
                   fill="currentColor"
@@ -214,231 +273,414 @@ export default function RegisterPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  {errors.general}
+                <h3 className="text-lg font-medium text-rose-800">
+                  Registration failed
                 </h3>
+                <p className="mt-1 text-sm text-rose-700">{errors.general}</p>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Username
-              </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.username
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  aria-invalid={errors.username ? "true" : "false"}
-                  aria-describedby={
-                    errors.username ? "username-error" : undefined
-                  }
-                />
-              </div>
-              {errors.username && (
-                <p className="mt-2 text-sm text-red-600" id="username-error">
-                  {errors.username}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  aria-invalid={errors.email ? "true" : "false"}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-600" id="email-error">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  aria-invalid={errors.password ? "true" : "false"}
-                  aria-describedby={
-                    errors.password ? "password-error" : undefined
-                  }
-                />
-              </div>
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600" id="password-error">
-                  {errors.password}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.confirmPassword
-                      ? "border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                      : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
-                  placeholder="Confirm Password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  aria-invalid={errors.confirmPassword ? "true" : "false"}
-                  aria-describedby={
-                    errors.confirmPassword
-                      ? "confirm-password-error"
-                      : undefined
-                  }
-                />
-              </div>
-              {errors.confirmPassword && (
-                <p
-                  className="mt-2 text-sm text-red-600"
-                  id="confirm-password-error"
+          <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  {errors.confirmPassword}
-                </p>
-              )}
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    required
+                    className={`appearance-none block w-full pl-10 px-3 py-3 border ${
+                      errors.username
+                        ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"
+                        : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    } rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 sm:text-sm`}
+                    placeholder="Choose a username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    aria-invalid={errors.username ? "true" : "false"}
+                    aria-describedby={
+                      errors.username ? "username-error" : undefined
+                    }
+                  />
+                </div>
+                {errors.username && (
+                  <p className="mt-2 text-sm text-rose-600" id="username-error">
+                    {errors.username}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className={`appearance-none block w-full pl-10 px-3 py-3 border ${
+                      errors.email
+                        ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"
+                        : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    } rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 sm:text-sm`}
+                    placeholder="Your email address"
+                    value={formData.email}
+                    onChange={handleChange}
+                    aria-invalid={errors.email ? "true" : "false"}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-2 text-sm text-rose-600" id="email-error">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className={`appearance-none block w-full pl-10 px-3 py-3 border ${
+                      errors.password
+                        ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"
+                        : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    } rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 sm:text-sm`}
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    aria-invalid={errors.password ? "true" : "false"}
+                    aria-describedby={
+                      errors.password ? "password-error" : undefined
+                    }
+                  />
+                </div>
+                {errors.password && (
+                  <p className="mt-2 text-sm text-rose-600" id="password-error">
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className={`appearance-none block w-full pl-10 px-3 py-3 border ${
+                      errors.confirmPassword
+                        ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"
+                        : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    } rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 sm:text-sm`}
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    aria-invalid={errors.confirmPassword ? "true" : "false"}
+                    aria-describedby={
+                      errors.confirmPassword
+                        ? "confirm-password-error"
+                        : undefined
+                    }
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p
+                    className="mt-2 text-sm text-rose-600"
+                    id="confirm-password-error"
+                  >
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mt-8">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Account Type
               </label>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {accountTypes.map((type) => (
                   <div
                     key={type.id}
-                    className={`relative rounded-lg border ${
+                    className={`relative rounded-xl border-2 ${
                       formData.accountType === type.id
                         ? "border-blue-500 bg-blue-50"
-                        : "border-gray-300 bg-white hover:bg-gray-50"
-                    } p-4 cursor-pointer transition-all duration-200`}
+                        : "border-gray-200 bg-white hover:bg-gray-50"
+                    } p-5 cursor-pointer transition-all duration-200 shadow-sm hover:shadow`}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, accountType: type.id }))
                     }
                   >
-                    <div className="flex items-start">
-                      <div className="flex items-center h-5">
-                        <input
-                          id={`account-type-${type.id}`}
-                          name="accountType"
-                          type="radio"
-                          className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
-                          checked={formData.accountType === type.id}
-                          onChange={handleChange}
-                          value={type.id}
-                        />
+                    <div className="absolute top-4 right-4">
+                      <div
+                        className={`h-5 w-5 rounded-full flex items-center justify-center ${
+                          formData.accountType === type.id
+                            ? "bg-blue-500 border-2 border-blue-200"
+                            : "border-2 border-gray-300"
+                        }`}
+                      >
+                        {formData.accountType === type.id && (
+                          <div className="h-2 w-2 rounded-full bg-white"></div>
+                        )}
                       </div>
-                      <div className="ml-3 text-sm">
+                    </div>
+
+                    <div className="flex items-start mb-4">
+                      <div
+                        className={`${
+                          formData.accountType === type.id
+                            ? "text-blue-600"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {type.icon}
+                      </div>
+                      <div className="ml-4">
                         <label
                           htmlFor={`account-type-${type.id}`}
-                          className="font-medium text-gray-700"
+                          className={`font-bold text-lg ${
+                            formData.accountType === type.id
+                              ? "text-blue-800"
+                              : "text-gray-800"
+                          }`}
                         >
                           {type.title}
                         </label>
-                        <p className="text-gray-500">{type.description}</p>
-                        <ul className="mt-2 list-disc list-inside text-xs text-gray-600">
-                          {type.features.map((feature, index) => (
-                            <li key={index}>{feature}</li>
-                          ))}
-                        </ul>
+                        <p
+                          className={`text-sm ${
+                            formData.accountType === type.id
+                              ? "text-blue-700"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {type.description}
+                        </p>
                       </div>
                     </div>
+
+                    <ul className="space-y-2 mt-2">
+                      {type.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className={`flex items-center text-sm ${
+                            formData.accountType === type.id
+                              ? "text-blue-700"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className={`h-4 w-4 mr-2 ${
+                              formData.accountType === type.id
+                                ? "text-blue-500"
+                                : "text-gray-400"
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <input
+                      id={`account-type-${type.id}`}
+                      name="accountType"
+                      type="radio"
+                      className="sr-only"
+                      checked={formData.accountType === type.id}
+                      onChange={handleChange}
+                      value={type.id}
+                    />
                   </div>
                 ))}
               </div>
               {errors.accountType && (
                 <p
-                  className="mt-2 text-sm text-red-600"
+                  className="mt-2 text-sm text-rose-600"
                   id="account-type-error"
                 >
                   {errors.accountType}
                 </p>
               )}
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading || success}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isLoading
-                ? "Creating account..."
-                : success
-                ? "Account created!"
-                : "Create account"}
-            </button>
-          </div>
-        </form>
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading || success}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Creating account...
+                  </div>
+                ) : success ? (
+                  <div className="flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Account created!
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                      />
+                    </svg>
+                    Create account
+                  </div>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

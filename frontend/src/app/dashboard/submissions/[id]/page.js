@@ -37,6 +37,60 @@ export default function SubmissionDetail({ params }) {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [chatId, setChatId] = useState("");
 
+  // Get platform name
+  const getPlatformName = (platform) => {
+    switch (platform) {
+      case "twitter":
+        return "Twitter";
+      case "discord":
+        return "Discord";
+      case "telegram":
+        return "Telegram";
+      default:
+        return "Unknown";
+    }
+  };
+
+  // Get background gradient by status
+  const getStatusGradient = (status) => {
+    switch (status) {
+      case "pending":
+        return "from-amber-500 to-orange-500";
+      case "approved":
+        return "from-emerald-500 to-green-600";
+      case "rejected":
+        return "from-rose-500 to-pink-600";
+      default:
+        return "from-blue-600 to-indigo-600";
+    }
+  };
+  // Get platform icon
+  const getPlatformIcon = (platform) => {
+    switch (platform) {
+      case "twitter":
+        return "fab fa-twitter text-blue-400";
+      case "discord":
+        return "fab fa-discord text-purple-500";
+      case "telegram":
+        return "fab fa-telegram text-blue-500";
+      default:
+        return "fas fa-globe text-teal-500";
+    }
+  };
+  // Get status color class
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "bg-amber-100 text-amber-800 border border-amber-300";
+      case "approved":
+        return "bg-emerald-100 text-emerald-800 border border-emerald-300";
+      case "rejected":
+        return "bg-rose-100 text-rose-800 border border-rose-300";
+      default:
+        return "bg-slate-100 text-slate-800 border border-slate-300";
+    }
+  };
+
   // Check if user is logged in and load submission
   useEffect(() => {
     setIsLoading(true);
@@ -46,6 +100,8 @@ export default function SubmissionDetail({ params }) {
     }
 
     const user = authService.getCurrentUser();
+    setCurrentUser(user);
+
     // Only admins and subaccounts can access submission details
     if (user.accountType !== "admin" && user.accountType !== "subaccount") {
       router.push("/dashboard");
@@ -60,13 +116,13 @@ export default function SubmissionDetail({ params }) {
     }
   }, [submissionId, router]);
 
-  // Load submission details
+  // Load submission details (keep existing loadSubmission function)
   const loadSubmission = async (id, user) => {
     try {
       const data = await submissionService.getSubmission(id);
       setSubmission(data);
       console.log("Submission data:", data);
-      console.log("hi");
+
       // Load platform accounts if admin
       if (user?.accountType === "admin") {
         loadPlatformAccounts(data.platform);
@@ -393,115 +449,169 @@ export default function SubmissionDetail({ params }) {
       const date = new Date(dateString);
 
       // Format the date using the browser's locale settings
-      // The backend is already providing dates in UTC+8, so we don't need to adjust
-      return date.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        hour12: true,
-      });
+      return (
+        date.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          hour12: true,
+        }) + " (UTC+8)"
+      );
     } catch (error) {
       console.error("Date formatting error:", error);
       return dateString || "N/A";
     }
   };
 
-  // Get platform icon
-  const getPlatformIcon = (platform) => {
-    switch (platform) {
-      case "twitter":
-        return "fab fa-twitter text-blue-400";
-      case "discord":
-        return "fab fa-discord text-indigo-500";
-      case "telegram":
-        return "fab fa-telegram text-blue-500";
-      default:
-        return "fas fa-globe text-gray-500";
-    }
-  };
-
-  // Get status color class
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
+  // Render loading state
   if (isLoading) {
     return (
-      <div className="flex justify-center py-10">
+      <div className="max-w-6xl mx-auto px-4 py-12 flex justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
+  // Render submission not found
   if (!submission) {
     return (
-      <div className="text-center py-10 text-gray-500">
-        <p className="text-lg">Submission not found</p>
-        <Link
-          href="/dashboard/submissions"
-          className="text-blue-500 hover:underline mt-2 inline-block"
-        >
-          Back to submissions
-        </Link>
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-16 w-16 text-gray-400 mx-auto mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9.172 16.172a4 4 0 005.656 0m-5.656 0a4 4 0 115.656 0m-5.656 0L4.343 13.657m5.657 2.515a4 4 0 005.656 0M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Submission Not Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            The submission you're looking for doesn't exist or has been deleted.
+          </p>
+          <Link
+            href="/dashboard/submissions"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 font-medium transition-all duration-150 inline-flex items-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Back to Submissions
+          </Link>
+        </div>
       </div>
     );
   }
 
-  // For subaccounts, show a read-only view
+  // Render submission details for subaccount
   if (currentUser?.accountType === "subaccount") {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Submission Details</h1>
-          <Link
-            href="/dashboard/submissions"
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-          >
-            Back to Submissions
-          </Link>
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Page Header with Gradient Background */}
+        <div
+          className={`bg-gradient-to-r ${getStatusGradient(
+            submission.status
+          )} rounded-xl p-6 mb-8 shadow-lg`}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                Submission Details
+              </h1>
+              <p className="text-white/80">
+                Details of your content submission
+              </p>
+            </div>
+            <Link
+              href="/dashboard/submissions"
+              className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-md font-medium flex items-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Back to Submissions
+            </Link>
+          </div>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        {/* Submission Content Area */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center">
-                <i
-                  className={`${getPlatformIcon(
-                    submission.platform
-                  )} text-2xl mr-3`}
-                ></i>
+                <div
+                  className={`${
+                    submission.status === "pending"
+                      ? "bg-amber-100"
+                      : submission.status === "approved"
+                      ? "bg-emerald-100"
+                      : "bg-rose-100"
+                  } p-3 rounded-full mr-3`}
+                >
+                  <i
+                    className={`${getPlatformIcon(
+                      submission.platform
+                    )} text-xl`}
+                  ></i>
+                </div>
                 <div>
-                  <h2 className="text-xl font-semibold">
-                    {submission.platform.charAt(0).toUpperCase() +
-                      submission.platform.slice(1)}
-                  </h2>
+                  <div className="font-medium text-gray-800">
+                    {getPlatformName(submission.platform)}
+                  </div>
                 </div>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                className={`px-3 py-1 rounded-full text-xs flex items-center ${getStatusColor(
                   submission.status
                 )}`}
               >
-                {submission.status}
+                {submission.status.charAt(0).toUpperCase() +
+                  submission.status.slice(1)}
               </span>
             </div>
 
-            <div className="mt-6">
-              <h3 className="text-md font-medium mb-2">Content</h3>
-              <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap">
-                {submission.content}
-              </div>
+            <div
+              className={`mt-4 text-gray-700 whitespace-pre-wrap p-4 rounded-lg border ${
+                submission.status === "pending"
+                  ? "bg-amber-50 border-amber-100"
+                  : submission.status === "approved"
+                  ? "bg-emerald-50 border-emerald-100"
+                  : "bg-rose-50 border-rose-100"
+              }`}
+            >
+              {submission.content}
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
@@ -519,7 +629,7 @@ export default function SubmissionDetail({ params }) {
                 </div>
               )}
 
-              {submission.reviewTime && (
+              {submission.reviewTime && submission.status !== "pending" && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">
                     Reviewed
@@ -527,34 +637,30 @@ export default function SubmissionDetail({ params }) {
                   <p>{formatDate(submission.reviewTime)}</p>
                 </div>
               )}
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  Submitted By
-                </h3>
-                <p>{submission.submitterUsername}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">
-                  Reviewed By
-                </h3>
-                <p>
-                  {submission.status === "pending"
-                    ? "Pending Review"
-                    : submission.adminUsername || "N/A"}
-                </p>
-              </div>
             </div>
 
             {submission.status === "rejected" && submission.rejectionReason && (
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-red-500">
-                  Reason for Rejection
-                </h3>
-                <p className="p-4 bg-red-50 rounded-md mt-1 text-red-700">
-                  {submission.rejectionReason}
-                </p>
+              <div className="mt-6 flex items-start p-3 bg-rose-50 border border-rose-200 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2 text-rose-600 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <div>
+                  <span className="font-medium text-rose-700">
+                    Reason for rejection:
+                  </span>
+                  <p className="text-rose-700">{submission.rejectionReason}</p>
+                </div>
               </div>
             )}
           </div>
@@ -563,55 +669,92 @@ export default function SubmissionDetail({ params }) {
     );
   }
 
-  // For admins, show a review interface
+  // Render submission details for admin
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Review Submission</h1>
-        <Link
-          href="/dashboard/submissions"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-        >
-          Back to Submissions
-        </Link>
+    <div className="max-w-6xl mx-auto px-4">
+      {/* Page Header with Gradient Background */}
+      <div
+        className={`bg-gradient-to-r ${getStatusGradient(
+          submission.status
+        )} rounded-xl p-6 mb-8 shadow-lg`}
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Review Submission</h1>
+            <p className="text-white/80">Detailed view of content submission</p>
+          </div>
+          <Link
+            href="/dashboard/submissions"
+            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-md font-medium flex items-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Back to Submissions
+          </Link>
+        </div>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+      {/* Submission Content Area */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center">
-              <i
-                className={`${getPlatformIcon(
-                  submission.platform
-                )} text-2xl mr-3`}
-              ></i>
+              <div
+                className={`${
+                  submission.status === "pending"
+                    ? "bg-amber-100"
+                    : submission.status === "approved"
+                    ? "bg-emerald-100"
+                    : "bg-rose-100"
+                } p-3 rounded-full mr-3`}
+              >
+                <i
+                  className={`${getPlatformIcon(submission.platform)} text-xl`}
+                ></i>
+              </div>
               <div>
-                <h2 className="text-xl font-semibold">
-                  {submission.platform.charAt(0).toUpperCase() +
-                    submission.platform.slice(1)}
-                </h2>
+                <div className="font-medium text-gray-800">
+                  {getPlatformName(submission.platform)}
+                </div>
+                <div className="text-sm text-gray-500">
+                  From: {submission.submitterUsername}
+                </div>
               </div>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                submission.status
-              )}`}
-            >
-              {submission.status}
-            </span>
-          </div>
-
-          <div className="mt-2">
-            <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
-              From: {submission.submitterUsername}
+            <div className="flex items-center space-x-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs flex items-center ${getStatusColor(
+                  submission.status
+                )}`}
+              >
+                {submission.status.charAt(0).toUpperCase() +
+                  submission.status.slice(1)}
+              </span>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-md font-medium mb-2">Content</h3>
-            <div className="p-4 bg-gray-50 rounded-md whitespace-pre-wrap">
-              {submission.content}
-            </div>
+          <div
+            className={`mt-4 text-gray-700 whitespace-pre-wrap p-4 rounded-lg border ${
+              submission.status === "pending"
+                ? "bg-amber-50 border-amber-100"
+                : submission.status === "approved"
+                ? "bg-emerald-50 border-emerald-100"
+                : "bg-rose-50 border-rose-100"
+            }`}
+          >
+            {submission.content}
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4">
@@ -628,46 +771,85 @@ export default function SubmissionDetail({ params }) {
                 <p>{formatDate(submission.scheduledTime)}</p>
               </div>
             )}
+
+            {submission.reviewTime && submission.status !== "pending" && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Reviewed</h3>
+                <p>{formatDate(submission.reviewTime)}</p>
+              </div>
+            )}
           </div>
 
+          {submission.status === "rejected" && submission.rejectionReason && (
+            <div className="mt-6 flex items-start p-3 bg-rose-50 border border-rose-200 rounded-lg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2 text-rose-600 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <span className="font-medium text-rose-700">
+                  Reason for rejection:
+                </span>
+                <p className="text-rose-700">{submission.rejectionReason}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons for admin */}
           {submission.status === "pending" && (
             <div className="mt-8 flex justify-end space-x-4">
               <button
                 onClick={() => setShowRejectModal(true)}
-                className="px-4 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50"
+                className="px-6 py-3 border border-rose-300 text-rose-600 rounded-lg hover:bg-rose-50 transition-all duration-150 flex items-center"
                 disabled={isProcessing}
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
                 Reject
               </button>
               <button
-                onClick={() => {
-                  setShowApproveModal(true);
-                }}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                onClick={() => setShowApproveModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded-lg shadow-sm hover:from-emerald-700 hover:to-green-800 transition-all duration-150 flex items-center"
                 disabled={isProcessing}
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
                 Approve
               </button>
-            </div>
-          )}
-
-          {submission.status !== "pending" && (
-            <div className="mt-6 p-4 bg-gray-100 rounded-md">
-              <p className="text-center text-gray-700">
-                This submission has already been {submission.status}.
-              </p>
-
-              {submission.status === "rejected" &&
-                submission.rejectionReason && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium text-red-500">
-                      Reason for Rejection
-                    </h3>
-                    <p className="p-3 bg-red-50 rounded-md mt-1 text-red-700">
-                      {submission.rejectionReason}
-                    </p>
-                  </div>
-                )}
             </div>
           )}
         </div>
@@ -676,18 +858,36 @@ export default function SubmissionDetail({ params }) {
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-medium mb-4">Reject Submission</h3>
-            <p className="text-gray-600 mb-4">
-              Please provide a reason for rejecting this submission.
-            </p>
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="bg-gradient-to-r from-rose-500 to-pink-600 text-white p-4 -mx-6 -mt-6 mb-4 rounded-t-lg">
+              <h3 className="text-lg font-bold flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                Reject Submission
+              </h3>
+              <p className="text-white/80 text-sm">
+                Provide a reason for rejecting this submission
+              </p>
+            </div>
 
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="Reason for rejection"
-              className="w-full border border-gray-300 rounded-md p-2 mb-4"
-              rows="3"
+              className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:ring-rose-500 focus:border-rose-500"
+              rows="4"
             ></textarea>
 
             <div className="flex justify-end space-x-3">
@@ -700,7 +900,7 @@ export default function SubmissionDetail({ params }) {
               </button>
               <button
                 onClick={handleRejectSubmission}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 bg-gradient-to-r from-rose-600 to-pink-700 text-white rounded hover:from-rose-700 hover:to-pink-800"
                 disabled={isProcessing || !rejectionReason.trim()}
               >
                 {isProcessing ? "Rejecting..." : "Reject Submission"}
@@ -713,62 +913,96 @@ export default function SubmissionDetail({ params }) {
       {/* Approve Modal */}
       {showApproveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-medium mb-4">Approve Submission</h3>
-            <p className="text-gray-600 mb-4">
-              Choose when to post this submission.
-            </p>
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-4 -mx-6 -mt-6 mb-4 rounded-t-lg">
+              <h3 className="text-lg font-bold flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Approve Submission
+              </h3>
+              <p className="text-white/80 text-sm">
+                Choose when and where to post this submission
+              </p>
+            </div>
+
+            {/* Platform-specific posting options */}
             {submission.platform === "discord" && account && (
-              <select
-                id="server-select"
-                value={selectedServer?.id || ""}
-                onChange={handleServerChange}
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              >
-                <option value="" disabled>
-                  Select a server
-                </option>
-                {servers.map((server) => (
-                  <option key={server.id} value={server.id}>
-                    {server.name}
+              <>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Server
+                </label>
+                <select
+                  id="server-select"
+                  value={selectedServer?.id || ""}
+                  onChange={handleServerChange}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md mb-4"
+                >
+                  <option value="" disabled>
+                    Select a server
                   </option>
-                ))}
-              </select>
-            )}
-            {submission.platform === "discord" && account && (
-              <select
-                id="channel-select"
-                value={selectedChannel?.id || ""}
-                onChange={handleChannelChange}
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                disabled={!selectedServer || channels.length === 0}
-              >
-                <option value="" disabled>
-                  Select a channel
-                </option>
-                {channels.map((channel) => (
-                  <option key={channel.id} value={channel.id}>
-                    #{channel.name}
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Channel
+                </label>
+                <select
+                  id="channel-select"
+                  value={selectedChannel?.id || ""}
+                  onChange={handleChannelChange}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  disabled={!selectedServer || channels.length === 0}
+                >
+                  <option value="" disabled>
+                    Select a channel
                   </option>
-                ))}
-              </select>
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      #{channel.name}
+                    </option>
+                  ))}
+                </select>
+              </>
             )}
+
             {submission.platform === "telegram" && account && (
-              <input
-                type="text"
-                className="flex-1 border p-2 rounded"
-                placeholder="Chat ID"
-                onChange={(e) => setChatId(e.target.value)}
-                required
-              />
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telegram Chat ID
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-md p-2"
+                  placeholder="Enter Telegram Chat ID"
+                  onChange={(e) => setChatId(e.target.value)}
+                  required
+                />
+              </div>
             )}
+
             <div className="mb-4">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={postImmediately}
                   onChange={(e) => setPostImmediately(e.target.checked)}
-                  className="mr-2"
+                  className="mr-2 rounded focus:ring-emerald-500"
                 />
                 <span>Post immediately</span>
               </label>
@@ -787,6 +1021,7 @@ export default function SubmissionDetail({ params }) {
                   min={formatDateTimeForInput(new Date())}
                 />
                 <p className="text-xs text-gray-500 mt-1">
+                  {" "}
                   All times are in UTC+8 timezone.
                 </p>
               </div>
@@ -797,12 +1032,12 @@ export default function SubmissionDetail({ params }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Twitter Account
                 </label>
-                <div className="p-2 bg-blue-50 rounded-md">
+                <div className="p-2 bg-blue-50 rounded-md border border-blue-100">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center text-white">
+                    <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center text-white mr-3">
                       <i className="fab fa-twitter"></i>
                     </div>
-                    <div className="ml-2">
+                    <div>
                       <div className="text-sm font-medium">
                         {account.username}
                       </div>
@@ -812,26 +1047,6 @@ export default function SubmissionDetail({ params }) {
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {platformAccounts && platformAccounts.length > 0 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Account
-                </label>
-                <select
-                  value={selectedAccountId}
-                  onChange={(e) => setSelectedAccountId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md p-2"
-                >
-                  <option value="">Select an account</option>
-                  {platformAccounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name || account.username || account.id}
-                    </option>
-                  ))}
-                </select>
               </div>
             )}
 
@@ -845,7 +1060,7 @@ export default function SubmissionDetail({ params }) {
               </button>
               <button
                 onClick={handleApproveSubmission}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-700 text-white rounded hover:from-emerald-700 hover:to-green-800"
                 disabled={isProcessing}
               >
                 {isProcessing ? "Approving..." : "Approve Submission"}

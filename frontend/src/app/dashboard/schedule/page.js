@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   scheduleService,
   twitterService,
@@ -73,20 +74,6 @@ export default function ScheduleComponent() {
     content: "",
     scheduledTime: getTomorrowDateTime(),
   });
-
-  // Get tomorrow's date at current time
-  function getTomorrowDateTime() {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return formatDateTimeForInput(tomorrow);
-  }
-
-  // Format date for datetime-local input
-  function formatDateTimeForInput(date) {
-    return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16); // Format: "YYYY-MM-DDTHH:MM"
-  }
 
   // Check if user is logged in and load scheduled posts
   useEffect(() => {
@@ -337,16 +324,6 @@ export default function ScheduleComponent() {
     setPostToEdit((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    try {
-      const date = new Date(dateString);
-      return format(date, "MMM d, yyyy 'at' h:mm a");
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   // Get account name by id and platform
   const getAccountName = (platformId, platform) => {
     if (platform === "twitter") {
@@ -368,11 +345,11 @@ export default function ScheduleComponent() {
       case "twitter":
         return "fab fa-twitter text-blue-400";
       case "discord":
-        return "fab fa-discord text-indigo-500";
+        return "fab fa-discord text-purple-500"; // Changed to match dashboard
       case "telegram":
         return "fab fa-telegram text-blue-500";
       default:
-        return "fas fa-globe";
+        return "fas fa-globe text-teal-500"; // Changed to match dashboard
     }
   };
 
@@ -380,172 +357,587 @@ export default function ScheduleComponent() {
   const getStatusColor = (status) => {
     switch (status) {
       case "scheduled":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800 border border-amber-300"; // Enhanced with border
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 text-emerald-800 border border-emerald-300"; // Changed to emerald with border
       case "failed":
-        return "bg-red-100 text-red-800";
+        return "bg-rose-100 text-rose-800 border border-rose-300"; // Changed to rose with border
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-slate-100 text-slate-800 border border-slate-300"; // Changed to slate with border
+    }
+  };
+
+  // Get background gradient by tab
+  const getTabGradient = (tab) => {
+    switch (tab) {
+      case "scheduled":
+        return "from-blue-600 to-indigo-600";
+      case "completed":
+        return "from-emerald-500 to-green-600";
+      case "failed":
+        return "from-rose-500 to-pink-600";
+      default:
+        return "from-blue-600 to-indigo-600";
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Scheduled Posts</h1>
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          onClick={() => setShowCreateModal(true)}
-        >
-          Schedule New Post
-        </button>
+    <div className="max-w-6xl mx-auto px-4">
+      {/* Page Header with Gradient Background */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-xl p-6 mb-8 shadow-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Scheduled Posts</h1>
+            <p className="text-indigo-100">
+              Manage your content across platforms
+            </p>
+          </div>
+          <button
+            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-md font-medium flex items-center"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Schedule New Post
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex space-x-8">
-          <button
-            className={`py-4 px-1 ${
-              activeTab === "scheduled"
-                ? "border-b-2 border-blue-500 font-medium text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("scheduled")}
-          >
-            Scheduled
-          </button>
-          <button
-            className={`py-4 px-1 ${
-              activeTab === "completed"
-                ? "border-b-2 border-blue-500 font-medium text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("completed")}
-          >
-            Completed
-          </button>
-          <button
-            className={`py-4 px-1 ${
-              activeTab === "failed"
-                ? "border-b-2 border-blue-500 font-medium text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("failed")}
-          >
-            Failed
-          </button>
-        </nav>
+      {/* Enhanced Tabs */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 mb-6">
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-0.5">
+          <nav className="flex">
+            <button
+              className={`py-4 px-6 font-medium ${
+                activeTab === "scheduled"
+                  ? "bg-white text-blue-600"
+                  : "text-white hover:bg-white/10"
+              } transition-all duration-200`}
+              onClick={() => setActiveTab("scheduled")}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Scheduled
+              </div>
+            </button>
+            <button
+              className={`py-4 px-6 font-medium ${
+                activeTab === "completed"
+                  ? "bg-white text-emerald-600"
+                  : "text-white hover:bg-white/10"
+              } transition-all duration-200`}
+              onClick={() => setActiveTab("completed")}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Completed
+              </div>
+            </button>
+            <button
+              className={`py-4 px-6 font-medium ${
+                activeTab === "failed"
+                  ? "bg-white text-rose-600"
+                  : "text-white hover:bg-white/10"
+              } transition-all duration-200`}
+              onClick={() => setActiveTab("failed")}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                Failed
+              </div>
+            </button>
+          </nav>
+        </div>
       </div>
 
       {/* Post list */}
-      {isLoading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
+        <div
+          className={`bg-gradient-to-r ${getTabGradient(activeTab)} px-6 py-4`}
+        >
+          <h2 className="text-white text-xl font-bold flex items-center">
+            {activeTab === "scheduled" && (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            )}
+            {activeTab === "completed" && (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            )}
+            {activeTab === "failed" && (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            )}
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Posts
+          </h2>
+          <p
+            className={`${
+              activeTab === "scheduled"
+                ? "text-blue-100"
+                : activeTab === "completed"
+                ? "text-green-100"
+                : "text-rose-100"
+            } text-sm mt-1`}
+          >
+            {activeTab === "scheduled"
+              ? "Posts waiting to be published"
+              : activeTab === "completed"
+              ? "Successfully published posts"
+              : "Posts that failed to publish"}
+          </p>
         </div>
-      ) : scheduledPosts.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          <p className="text-lg">No {activeTab} posts found</p>
-          {activeTab === "scheduled" && (
-            <button
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              onClick={() => setShowCreateModal(true)}
-            >
-              Schedule your first post
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {scheduledPosts.map((post) => (
-            <div key={post.id} className="bg-white p-4 rounded shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center">
-                  <i
-                    className={`${getPlatformIcon(post.platform)} text-xl mr-3`}
-                  ></i>
-                  <div>
-                    <div className="font-medium">
-                      {getAccountName(post.platformAccountId, post.platform)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {post.platform === "discord" && "Channel: "}
-                      {post.platform === "telegram" && "Chat ID: "}
-                      {post.targetId}
-                    </div>
-                  </div>
-                </div>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                    post.status
-                  )}`}
+
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : scheduledPosts.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            <div className="flex flex-col items-center">
+              {activeTab === "scheduled" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mb-4 text-blue-300 opacity-80"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  {post.status}
-                </span>
-              </div>
-
-              <div className="mt-3 text-gray-700 whitespace-pre-wrap">
-                {post.content}
-              </div>
-
-              <div className="mt-3 text-sm text-gray-500">
-                <div>Scheduled for: {formatDate(post.scheduledTime)}</div>
-                {post.postedTime && (
-                  <div>Posted at: {formatDate(post.postedTime)}</div>
-                )}
-                {post.errorMessage && (
-                  <div className="text-red-500 mt-1">
-                    Error: {post.errorMessage}
-                  </div>
-                )}
-              </div>
-
-              {post.status === "scheduled" && (
-                <div className="mt-3 flex justify-end space-x-2">
-                  <button
-                    className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded"
-                    onClick={() => openEditModal(post)}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              )}
+              {activeTab === "completed" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mb-4 text-green-300 opacity-80"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              )}
+              {activeTab === "failed" && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-16 w-16 mb-4 text-rose-300 opacity-80"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              )}
+              <p className="text-lg">No {activeTab} posts found</p>
+              {activeTab === "scheduled" && (
+                <button
+                  className="mt-4 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-md font-medium flex items-center"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
                   >
-                    Edit
-                  </button>
-                  <button
-                    className="px-3 py-1 text-red-600 hover:bg-red-50 rounded"
-                    onClick={() => handleDeletePost(post.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+                    <path
+                      fillRule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Schedule your first post
+                </button>
               )}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {scheduledPosts.map((post) => (
+              <div
+                key={post.id}
+                className={`p-4 ${
+                  post.status === "scheduled"
+                    ? "hover:bg-blue-50"
+                    : post.status === "completed"
+                    ? "hover:bg-green-50"
+                    : "hover:bg-rose-50"
+                } transition-colors duration-150`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center">
+                    <div
+                      className={`${
+                        post.status === "scheduled"
+                          ? "bg-blue-100"
+                          : post.status === "completed"
+                          ? "bg-emerald-100"
+                          : "bg-rose-100"
+                      } p-3 rounded-full mr-3`}
+                    >
+                      <i
+                        className={`${getPlatformIcon(post.platform)} text-xl`}
+                      ></i>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-800">
+                        {getAccountName(post.platformAccountId, post.platform)}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {post.platform === "discord" && "Channel: "}
+                        {post.platform === "telegram" && "Chat ID: "}
+                        {post.targetId}
+                      </div>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs flex items-center ${getStatusColor(
+                      post.status
+                    )}`}
+                  >
+                    {post.status === "scheduled" && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    )}
+                    {post.status === "completed" && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                    {post.status === "failed" && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    )}
+                    {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                  </span>
+                </div>
+
+                <div
+                  className={`mt-3 text-gray-700 whitespace-pre-wrap p-4 rounded-lg border ${
+                    post.status === "scheduled"
+                      ? "bg-blue-50 border-blue-100"
+                      : post.status === "completed"
+                      ? "bg-emerald-50 border-emerald-100"
+                      : "bg-rose-50 border-rose-100"
+                  }`}
+                >
+                  {post.content}
+                </div>
+
+                <div className="mt-3 text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Scheduled for: {formatDate(post.scheduledTime)}
+                  </div>
+                  {post.postedTime && (
+                    <div className="flex items-center mt-1">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Posted at: {formatDate(post.postedTime)}
+                    </div>
+                  )}
+                  {post.errorMessage && (
+                    <div className="flex items-center mt-1 text-rose-600">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Error: {post.errorMessage}
+                    </div>
+                  )}
+                </div>
+
+                {post.status === "scheduled" && (
+                  <div className="mt-3 flex justify-end space-x-2">
+                    <button
+                      className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium flex items-center transition-all duration-150"
+                      onClick={() => openEditModal(post)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      className="px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-lg font-medium flex items-center transition-all duration-150"
+                      onClick={() => handleDeletePost(post.id)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Create Post Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-lg w-full mx-4 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium">Schedule New Post</h3>
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 overflow-hidden shadow-xl">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+              <h3 className="text-xl font-bold text-white flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Schedule New Post
+              </h3>
+              <p className="text-blue-100 text-sm">
+                Create and schedule your content
+              </p>
             </div>
 
             <form onSubmit={handleCreatePost}>
-              <div className="p-4 space-y-4">
+              <div className="p-6 space-y-4">
                 {/* Platform Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Platform
                   </label>
-                  <select
-                    name="platform"
-                    value={newPost.platform}
-                    onChange={(e) => handlePlatformChange(e.target.value)}
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="twitter">Twitter</option>
-                    <option value="discord">Discord</option>
-                    <option value="telegram">Telegram</option>
-                  </select>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 px-4 rounded-lg border flex justify-center items-center ${
+                        newPost.platform === "twitter"
+                          ? "bg-blue-50 border-blue-300 text-blue-600"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => handlePlatformChange("twitter")}
+                    >
+                      <i className="fab fa-twitter mr-2"></i>
+                      Twitter
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 px-4 rounded-lg border flex justify-center items-center ${
+                        newPost.platform === "discord"
+                          ? "bg-indigo-50 border-indigo-300 text-indigo-600"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => handlePlatformChange("discord")}
+                    >
+                      <i className="fab fa-discord mr-2"></i>
+                      Discord
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 px-4 rounded-lg border flex justify-center items-center ${
+                        newPost.platform === "telegram"
+                          ? "bg-blue-50 border-blue-300 text-blue-600"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                      onClick={() => handlePlatformChange("telegram")}
+                    >
+                      <i className="fab fa-telegram mr-2"></i>
+                      Telegram
+                    </button>
+                  </div>
                 </div>
 
                 {/* Account Selection */}
@@ -557,7 +949,7 @@ export default function ScheduleComponent() {
                     name="platformAccountId"
                     value={newPost.platformAccountId}
                     onChange={handleInputChange}
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select an account</option>
                     {newPost.platform === "twitter" &&
@@ -591,7 +983,7 @@ export default function ScheduleComponent() {
                       <select
                         value={selectedServer}
                         onChange={(e) => handleServerChange(e.target.value)}
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select a server</option>
                         {discordServers.map((server) => (
@@ -610,7 +1002,7 @@ export default function ScheduleComponent() {
                         name="targetId"
                         value={newPost.targetId}
                         onChange={handleInputChange}
-                        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select a channel</option>
                         {discordChannels.map((channel) => (
@@ -638,7 +1030,7 @@ export default function ScheduleComponent() {
                       value={newPost.targetId}
                       onChange={handleInputChange}
                       placeholder="e.g. 123456789"
-                      className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 )}
@@ -653,8 +1045,8 @@ export default function ScheduleComponent() {
                     value={newPost.content}
                     onChange={handleInputChange}
                     rows="4"
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="What do you want to post?"
+                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={`What do you want to post on ${newPost.platform}?`}
                     maxLength={newPost.platform === "twitter" ? 280 : 2000}
                   ></textarea>
                   <div className="mt-1">
@@ -667,7 +1059,7 @@ export default function ScheduleComponent() {
                   </div>
                   {newPost.platform === "twitter" && (
                     <div className="text-xs text-right mt-1 text-gray-500">
-                      {newPost.content.length}/280
+                      {newPost.content.length}/280 characters
                     </div>
                   )}
                 </div>
@@ -682,22 +1074,22 @@ export default function ScheduleComponent() {
                     name="scheduledTime"
                     value={newPost.scheduledTime}
                     onChange={handleInputChange}
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="px-4 py-3 bg-gray-50 flex justify-end">
+              <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
                 <button
                   type="button"
-                  className="px-4 py-2 border rounded-md text-gray-700 bg-white mr-2"
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white shadow-sm hover:bg-gray-50 font-medium transition-all duration-150"
                   onClick={() => setShowCreateModal(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 font-medium transition-all duration-150"
                 >
                   Schedule Post
                 </button>
@@ -709,35 +1101,58 @@ export default function ScheduleComponent() {
 
       {/* Edit Post Modal */}
       {showEditModal && postToEdit && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-lg w-full mx-4 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-medium">Edit Scheduled Post</h3>
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 overflow-hidden shadow-xl">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4">
+              <h3 className="text-xl font-bold text-white flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                Edit Scheduled Post
+              </h3>
+              <p className="text-amber-100 text-sm">
+                Update your scheduled content
+              </p>
             </div>
 
             <form onSubmit={handleUpdatePost}>
-              <div className="p-4 space-y-4">
+              <div className="p-6 space-y-4">
                 {/* Platform & Account Info (non-editable) */}
-                <div className="flex items-center">
-                  <i
-                    className={`${getPlatformIcon(
-                      postToEdit.platform
-                    )} text-xl mr-3`}
-                  ></i>
-                  <div>
-                    <div className="font-medium">
-                      {getAccountName(
-                        postToEdit.platformAccountId,
-                        postToEdit.platform
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <div className="flex items-center">
+                    <div className="bg-amber-100 p-2 rounded-full mr-3">
+                      <i
+                        className={`${getPlatformIcon(
+                          postToEdit.platform
+                        )} text-xl`}
+                      ></i>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-800">
+                        {getAccountName(
+                          postToEdit.platformAccountId,
+                          postToEdit.platform
+                        )}
+                      </div>
+                      {postToEdit.targetId && (
+                        <div className="text-sm text-gray-500">
+                          {postToEdit.platform === "discord" && "Channel: "}
+                          {postToEdit.platform === "telegram" && "Chat ID: "}
+                          {postToEdit.targetId}
+                        </div>
                       )}
                     </div>
-                    {postToEdit.targetId && (
-                      <div className="text-sm text-gray-500">
-                        {postToEdit.platform === "discord" && "Channel: "}
-                        {postToEdit.platform === "telegram" && "Chat ID: "}
-                        {postToEdit.targetId}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -751,20 +1166,12 @@ export default function ScheduleComponent() {
                     value={postToEdit.content}
                     onChange={handleEditInputChange}
                     rows="4"
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500"
                     maxLength={postToEdit.platform === "twitter" ? 280 : 2000}
                   ></textarea>
-                  <div className="mt-1">
-                    <AITextGenerator
-                      onTextGenerated={(text) =>
-                        setNewPost((prev) => ({ ...prev, content: text }))
-                      }
-                      platform={newPost.platform}
-                    />
-                  </div>
                   {postToEdit.platform === "twitter" && (
                     <div className="text-xs text-right mt-1 text-gray-500">
-                      {postToEdit.content.length}/280
+                      {postToEdit.content.length}/280 characters
                     </div>
                   )}
                 </div>
@@ -779,22 +1186,22 @@ export default function ScheduleComponent() {
                     name="scheduledTime"
                     value={postToEdit.scheduledTime}
                     onChange={handleEditInputChange}
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="px-4 py-3 bg-gray-50 flex justify-end">
+              <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
                 <button
                   type="button"
-                  className="px-4 py-2 border rounded-md text-gray-700 bg-white mr-2"
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white shadow-sm hover:bg-gray-50 font-medium transition-all duration-150"
                   onClick={() => setShowEditModal(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg shadow-sm hover:from-amber-600 hover:to-orange-700 font-medium transition-all duration-150"
                 >
                   Update Post
                 </button>

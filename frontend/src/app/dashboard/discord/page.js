@@ -21,7 +21,6 @@ export default function DiscordDashboard() {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const router = useRouter();
 
-  // Load Discord accounts and servers when the page loads
   useEffect(() => {
     async function loadInitialData() {
       try {
@@ -69,6 +68,7 @@ export default function DiscordDashboard() {
       }
     } catch (error) {
       console.log("Error loading Discord servers:", error);
+      toast.error("Failed to load Discord servers");
     } finally {
       setIsLoadingServers(false);
     }
@@ -171,136 +171,163 @@ export default function DiscordDashboard() {
     return date.toLocaleString();
   };
 
-  // Loading spinner component
-  const LoadingSpinner = () => (
-    <div className="flex justify-center items-center h-screen">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
-    </div>
-  );
-
-  // If still loading accounts, show a loading spinner
+  // Loading spinner for initial accounts loading
   if (isLoadingAccounts) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
   }
-
-  // Only render the main dashboard if we have accounts
+  // Updated UI with more consistent styling
   return (
-    <div className="space-y-6">
-      <div className="pb-5 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Discord Dashboard</h1>
+    <div className="max-w-6xl mx-auto px-4">
+      {/* Page Header with Gradient Background */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-500 rounded-xl p-6 mb-8 shadow-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Discord Dashboard</h1>
+            <p className="text-indigo-100 mt-2">
+              Manage and interact with your Discord servers and channels
+            </p>
+          </div>
+          <button
+            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all duration-200 shadow-md font-medium flex items-center"
+            onClick={() => router.push("/dashboard")}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col h-[calc(100vh-180px)] bg-white shadow rounded-lg overflow-hidden">
+      {/* Main Content Area */}
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
         {/* Top navigation - Dropdowns */}
-        <div className="flex items-center space-x-4 p-4 border-b border-gray-200">
-          {/* Server selection */}
-          <div className="w-64">
-            <label
-              htmlFor="server-select"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Server
-            </label>
-            {isLoadingServers ? (
-              <div className="flex items-center h-10">
-                <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-500"></div>
-                <span className="text-sm text-gray-500">
-                  Loading servers...
-                </span>
-              </div>
-            ) : (
-              <select
-                id="server-select"
-                value={selectedServer?.id || ""}
-                onChange={handleServerChange}
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+        <div className="bg-gray-50 border-b border-gray-200 p-4">
+          <div className="flex items-center space-x-4">
+            {/* Server selection */}
+            <div className="w-64">
+              <label
+                htmlFor="server-select"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
-                <option value="" disabled>
-                  Select a server
-                </option>
-                {servers.map((server) => (
-                  <option key={server.id} value={server.id}>
-                    {server.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Channel selection */}
-          <div className="w-64">
-            <label
-              htmlFor="channel-select"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Channel
-            </label>
-            {isLoadingChannels ? (
-              <div className="flex items-center h-10">
-                <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-500"></div>
-                <span className="text-sm text-gray-500">
-                  Loading channels...
-                </span>
-              </div>
-            ) : (
-              <select
-                id="channel-select"
-                value={selectedChannel?.id || ""}
-                onChange={handleChannelChange}
-                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                disabled={!selectedServer || channels.length === 0}
-              >
-                <option value="" disabled>
-                  Select a channel
-                </option>
-                {channels.map((channel) => (
-                  <option key={channel.id} value={channel.id}>
-                    #{channel.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Refresh button */}
-          <div className="flex items-end">
-            <button
-              onClick={() =>
-                selectedChannel && loadMessages(selectedChannel.id)
-              }
-              disabled={!selectedChannel || isLoadingMessages}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoadingMessages ? (
-                <>
-                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-700"></div>
-                  Refreshing...
-                </>
+                Server
+              </label>
+              {isLoadingServers ? (
+                <div className="flex items-center h-10">
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-500"></div>
+                  <span className="text-sm text-gray-500">
+                    Loading servers...
+                  </span>
+                </div>
               ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  Refresh
-                </>
+                <select
+                  id="server-select"
+                  value={selectedServer?.id || ""}
+                  onChange={handleServerChange}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                >
+                  <option value="" disabled>
+                    Select a server
+                  </option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name}
+                    </option>
+                  ))}
+                </select>
               )}
-            </button>
+            </div>
+
+            {/* Channel selection */}
+            <div className="w-64">
+              <label
+                htmlFor="channel-select"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Channel
+              </label>
+              {isLoadingChannels ? (
+                <div className="flex items-center h-10">
+                  <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-indigo-500"></div>
+                  <span className="text-sm text-gray-500">
+                    Loading channels...
+                  </span>
+                </div>
+              ) : (
+                <select
+                  id="channel-select"
+                  value={selectedChannel?.id || ""}
+                  onChange={handleChannelChange}
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  disabled={!selectedServer || channels.length === 0}
+                >
+                  <option value="" disabled>
+                    Select a channel
+                  </option>
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      #{channel.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Refresh button */}
+            <div className="flex items-end">
+              <button
+                onClick={() =>
+                  selectedChannel && loadMessages(selectedChannel.id)
+                }
+                disabled={!selectedChannel || isLoadingMessages}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 font-medium transition-all duration-150"
+              >
+                {isLoadingMessages ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white"></div>
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Refresh
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="h-[calc(100vh-400px)] overflow-y-auto p-6 bg-gray-50">
           {isLoadingMessages ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
@@ -308,17 +335,20 @@ export default function DiscordDashboard() {
           ) : messages.length > 0 ? (
             <ul className="space-y-4">
               {messages.map((message) => (
-                <li key={message.id} className="bg-white rounded-lg shadow p-4">
+                <li
+                  key={message.id}
+                  className="bg-white rounded-lg shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all duration-150"
+                >
                   <div className="flex items-start">
                     {message.author?.avatarUrl ? (
                       <img
                         src={message.author.avatarUrl}
                         alt={message.author.username}
-                        className="h-10 w-10 rounded-full mr-3 flex-shrink-0"
+                        className="h-10 w-10 rounded-full mr-3 flex-shrink-0 border-2 border-indigo-100"
                       />
                     ) : (
-                      <div className="h-10 w-10 rounded-full bg-indigo-300 flex items-center justify-center mr-3 flex-shrink-0">
-                        <span className="text-sm font-medium text-white">
+                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3 flex-shrink-0 text-indigo-600">
+                        <span className="text-sm font-medium">
                           {message.author?.username?.charAt(0).toUpperCase() ||
                             "?"}
                         </span>
@@ -345,7 +375,7 @@ export default function DiscordDashboard() {
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mb-2 text-gray-400"
+                className="h-16 w-16 mb-4 text-indigo-300 opacity-80"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -357,13 +387,13 @@ export default function DiscordDashboard() {
                   d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p>No messages found in this channel</p>
+              <p className="text-lg">No messages found in this channel</p>
             </div>
           ) : servers.length > 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mb-2 text-gray-400"
+                className="h-16 w-16 mb-4 text-indigo-300 opacity-80"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -375,13 +405,13 @@ export default function DiscordDashboard() {
                   d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
                 />
               </svg>
-              <p>Select a channel to view messages</p>
+              <p className="text-lg">Select a channel to view messages</p>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-12 w-12 mb-2 text-gray-400"
+                className="h-16 w-16 mb-4 text-indigo-300 opacity-80"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -393,7 +423,7 @@ export default function DiscordDashboard() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <p>No servers found</p>
+              <p className="text-lg">No servers found</p>
             </div>
           )}
         </div>
@@ -419,7 +449,7 @@ export default function DiscordDashboard() {
                 disabled={
                   !selectedChannel || isSendingMessage || !newMessage.trim()
                 }
-                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="ml-3 inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-sm hover:from-blue-700 hover:to-indigo-700 font-medium transition-all duration-150"
               >
                 {isSendingMessage ? (
                   <>
