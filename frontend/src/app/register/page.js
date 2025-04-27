@@ -110,6 +110,16 @@ export default function RegisterPage() {
     });
     setSuccess(false);
 
+    // Validate password length
+    if (formData.password.length < 8) {
+      setErrors((prev) => ({
+        ...prev,
+        password: "Password must be at least 8 characters long",
+      }));
+      setIsLoading(false);
+      return;
+    }
+
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setErrors((prev) => ({
@@ -413,12 +423,13 @@ export default function RegisterPage() {
                     type="password"
                     autoComplete="new-password"
                     required
+                    minLength="8"
                     className={`appearance-none block w-full pl-10 px-3 py-3 border ${
                       errors.password
                         ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"
                         : "border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     } rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all duration-200 sm:text-sm`}
-                    placeholder="Create a password"
+                    placeholder="Create a password (min. 8 characters)"
                     value={formData.password}
                     onChange={handleChange}
                     aria-invalid={errors.password ? "true" : "false"}
@@ -432,6 +443,9 @@ export default function RegisterPage() {
                     {errors.password}
                   </p>
                 )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Must be at least 8 characters long
+                </p>
               </div>
 
               <div>
@@ -464,6 +478,7 @@ export default function RegisterPage() {
                     type="password"
                     autoComplete="new-password"
                     required
+                    minLength="8"
                     className={`appearance-none block w-full pl-10 px-3 py-3 border ${
                       errors.confirmPassword
                         ? "border-rose-300 text-rose-900 placeholder-rose-300 focus:outline-none focus:ring-rose-500 focus:border-rose-500"

@@ -68,7 +68,6 @@ export default function DiscordDashboard() {
       }
     } catch (error) {
       console.log("Error loading Discord servers:", error);
-      toast.error("Failed to load Discord servers");
     } finally {
       setIsLoadingServers(false);
     }
